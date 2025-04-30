@@ -1,20 +1,63 @@
 http:
-  port: 8080
+  port: 9090
+  host: localhost
+
 admin:
   port: 9876
   host: localhost
+
 apiEndpoints:
-  # see: http://www.express-gateway.io/docs/configuration/gateway.config.yml/apiEndpoints
+  authAPI:
+    paths: ['/api/auth/*']
+  usersAPI:
+    paths: ['/api/users/*']
+  transactionsAPI:
+    paths: ['/api/transactions/*']
+
 serviceEndpoints:
-  # see: http://www.express-gateway.io/docs/configuration/gateway.config.yml/serviceEndpoints
+  authService:
+    url: 'http://localhost:3001'
+  transactionsService:
+    url: 'http://localhost:3002'
+
 policies:
-  - basic-auth
   - cors
-  - expression
-  - key-auth
-  - log
-  - oauth2
+  - jwt
   - proxy
-  - rate-limit
+
 pipelines:
-  # see: https://www.express-gateway.io/docs/configuration/gateway.config.yml/pipelines
+  authPipeline:
+    apiEndpoints: [authAPI]
+    policies:
+      - cors: {}
+      - proxy:
+          action:
+            serviceEndpoint: authService
+
+  usersPipeline:
+    apiEndpoints: [usersAPI]
+    policies:
+      - cors: {}
+      - jwt:
+          action:
+            secretOrPublicKey: '${JWT_SECRET}'
+            credentialsRequired: true        # require login
+            algorithms: ['HS256']
+            checkCredentialExistence: false  # still skip Consumer
+      - proxy:
+          action:
+            serviceEndpoint: authService
+
+  transactionsPipeline:
+    apiEndpoints: [transactionsAPI]
+    policies:
+      - cors: {}
+      - jwt:
+          action:
+            secretOrPublicKey: '${JWT_SECRET}'
+            credentialsRequired: true        # protect tx endpoints
+            algorithms: ['HS256']
+            checkCredentialExistence: false  # uncontrolled mode
+      - proxy:
+          action:
+            serviceEndpoint: transactionsService
