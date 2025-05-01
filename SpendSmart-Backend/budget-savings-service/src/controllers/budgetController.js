@@ -145,32 +145,46 @@ exports.getBudgetSummary = async (req, res) => {
 
             await Budget.updateOne({ _id: b._id }, { $set: { spent, remaining, percentUsed } });
 
-            if (percentUsed >= 100) {
-                await sendMail({
-                    to: req.user.email,
-                    subject: `Budget Exceeded: ${b.name}`,
-                    text: `You have spent \$${spent} on "${b.name}", which exceeds your limit of \$${b.limit}.`,
-                    html: `<p>You have spent <strong>$${spent}</strong> on "<em>${b.name}</em>", which exceeds your limit of <strong>$${b.limit}</strong>.</p>`
-                });
-                console.log('Budget exceeded 90%, sending email to:', req.user.email);
+            if (percentUsed > 100) {
+              // Over the limit
+              await sendMail({
+                to: req.user.email,
+                subject: `Budget Exceeded: ${b.name}`,
+                text: `You have spent ₹${spent} on "${b.name}", which exceeds your limit of ₹${b.limit} (${percentUsed}%).`,
+                html: `<p>You have spent <strong>₹${spent}</strong> on "<em>${b.name}</em>", which exceeds your limit of <strong>₹${b.limit}</strong> (${percentUsed}%).</p>`
+              });
+              console.log(`Budget exceeded 100%, sending email to:`, req.user.email);
+            
+            } else if (percentUsed >= 90) {
+              // 90% warning
+              await sendMail({
+                to: req.user.email,
+                subject: `Budget Warning: ${b.name} at 90%`,
+                text: `You have used ${percentUsed}% of your ₹${b.limit} budget for "${b.name}". (₹${spent} spent)`,
+                html: `<p>You have used <strong>${percentUsed}%</strong> of your <strong>₹${b.limit}</strong> budget for "<em>${b.name}</em>". (<strong>₹${spent}</strong> spent)</p>`
+              });
+              console.log(`Budget reached 90%, sending warning to:`, req.user.email);
+            
             } else if (percentUsed >= 75) {
-                await sendMail({
-                    to: req.user.email,
-                    subject: `Budget Warning: ${b.name}`,
-                    text: `You have spent \$${spent} on "${b.name}", which is over 75% of your limit of \$${b.limit}.`,
-                    html: `<p>You have spent <strong>$${spent}</strong> on "<em>${b.name}</em>", which is over 75% of your limit of <strong>$${b.limit}</strong>.</p>`
-                });
-                console.log('Budget exceeded 75%, sending email to:', req.user.email);
+              // 75% warning
+              await sendMail({
+                to: req.user.email,
+                subject: `Budget Warning: ${b.name} at 75%`,
+                text: `You have used ${percentUsed}% of your ₹${b.limit} budget for "${b.name}". (₹${spent} spent)`,
+                html: `<p>You have used <strong>${percentUsed}%</strong> of your <strong>₹${b.limit}</strong> budget for "<em>${b.name}</em>". (<strong>₹${spent}</strong> spent)</p>`
+              });
+              console.log(`Budget reached 75%, sending warning to:`, req.user.email);
+            
             } else if (percentUsed >= 50) {
-                await sendMail({
-                    to: req.user.email,
-                    subject: `Budget Warning: ${b.name}`,
-                    text: `You have spent \$${spent} on "${b.name}", which is over 50% of your limit of \$${b.limit}.`,
-                    html: `<p>You have spent <strong>$${spent}</strong> on "<em>${b.name}</em>", which is over 50% of your limit of <strong>$${b.limit}</strong>.</p>`
-                });
-                console.log('Budget exceeded 50%, sending email to:', req.user.email);
+              // 50% warning
+              await sendMail({
+                to: req.user.email,
+                subject: `Budget Warning: ${b.name} at 50%`,
+                text: `You have used ${percentUsed}% of your ₹${b.limit} budget for "${b.name}". (₹${spent} spent)`,
+                html: `<p>You have used <strong>${percentUsed}%</strong> of your <strong>₹${b.limit}</strong> budget for "<em>${b.name}</em>". (<strong>₹${spent}</strong> spent)</p>`
+              });
+              console.log(`Budget reached 50%, sending warning to:`, req.user.email);
             }
-
             return {
                 budgetId: b._id,
                 name: b.name,
@@ -234,30 +248,45 @@ const checkBudgetAndNotify = async (budget, user, userEmail) => {
 
     await Budget.updateOne({ _id: budget._id }, { $set: { spent, remaining, percentUsed } });
 
-    if (percentUsed >= 100) {
-        await sendMail({
-            to: userEmail,
-            subject: `Budget Exceeded: ${budget.name}`,
-            text: `You have spent \$${spent} on "${budget.name}", which exceeds your limit of \$${budget.limit}.`,
-            html: `<p>You have spent <strong>$${spent}</strong> on "<em>${budget.name}</em>", which exceeds your limit of <strong>$${budget.limit}</strong>.</p>`
-        });
-        console.log('Budget exceeded 90%, sending email to:', userEmail);
+    if (percentUsed > 100) {
+      // Over the limit
+      await sendMail({
+        to: req.user.email,
+        subject: `Budget Exceeded: ${b.name}`,
+        text: `You have spent ₹${spent} on "${b.name}", which exceeds your limit of ₹${b.limit} (${percentUsed}%).`,
+        html: `<p>You have spent <strong>₹${spent}</strong> on "<em>${b.name}</em>", which exceeds your limit of <strong>₹${b.limit}</strong> (${percentUsed}%).</p>`
+      });
+      console.log(`Budget exceeded 100%, sending email to:`, req.user.email);
+    
+    } else if (percentUsed >= 90) {
+      // 90% warning
+      await sendMail({
+        to: req.user.email,
+        subject: `Budget Warning: ${b.name} at 90%`,
+        text: `You have used ${percentUsed}% of your ₹${b.limit} budget for "${b.name}". (₹${spent} spent)`,
+        html: `<p>You have used <strong>${percentUsed}%</strong> of your <strong>₹${b.limit}</strong> budget for "<em>${b.name}</em>". (<strong>₹${spent}</strong> spent)</p>`
+      });
+      console.log(`Budget reached 90%, sending warning to:`, req.user.email);
+    
     } else if (percentUsed >= 75) {
-        await sendMail({
-            to: userEmail,
-            subject: `Budget Warning: ${budget.name}`,
-            text: `You have spent \$${spent} on "${budget.name}", which is over 75% of your limit of \$${budget.limit}.`,
-            html: `<p>You have spent <strong>$${spent}</strong> on "<em>${budget.name}</em>", which is over 75% of your limit of <strong>$${budget.limit}</strong>.</p>`
-        });
-        console.log('Budget exceeded 75%, sending email to:', userEmail);
+      // 75% warning
+      await sendMail({
+        to: req.user.email,
+        subject: `Budget Warning: ${b.name} at 75%`,
+        text: `You have used ${percentUsed}% of your ₹${b.limit} budget for "${b.name}". (₹${spent} spent)`,
+        html: `<p>You have used <strong>${percentUsed}%</strong> of your <strong>₹${b.limit}</strong> budget for "<em>${b.name}</em>". (<strong>₹${spent}</strong> spent)</p>`
+      });
+      console.log(`Budget reached 75%, sending warning to:`, req.user.email);
+    
     } else if (percentUsed >= 50) {
-        await sendMail({
-            to: userEmail,
-            subject: `Budget Warning: ${budget.name}`,
-            text: `You have spent \$${spent} on "${budget.name}", which is over 50% of your limit of \$${budget.limit}.`,
-            html: `<p>You have spent <strong>$${spent}</strong> on "<em>${budget.name}</em>", which is over 50% of your limit of <strong>$${budget.limit}</strong>.</p>`
-        });
-        console.log('Budget exceeded 50%, sending email to:', userEmail);
+      // 50% warning
+      await sendMail({
+        to: req.user.email,
+        subject: `Budget Warning: ${b.name} at 50%`,
+        text: `You have used ${percentUsed}% of your ₹${b.limit} budget for "${b.name}". (₹${spent} spent)`,
+        html: `<p>You have used <strong>${percentUsed}%</strong> of your <strong>₹${b.limit}</strong> budget for "<em>${b.name}</em>". (<strong>₹${spent}</strong> spent)</p>`
+      });
+      console.log(`Budget reached 50%, sending warning to:`, req.user.email);
     }
 
     const updatedBudget = Budget.findOne({ _id: budget._id });
