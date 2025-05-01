@@ -1,9 +1,9 @@
 const express = require('express');
 const { findUserById } = require('../controllers/userController');
-const { protect } = require('../middlewares/authMiddleware');
+const { protect, verifyServiceKey } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
-router.get('/profile', protect, findUserById)
+router.get('/profile', verifyServiceKey || protect, findUserById)
 
 module.exports = router;

@@ -3,28 +3,39 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
+const bodyParser = require('body-parser');
+
+const { loadCategoryMap } = require('./utils/categoryMap');
+const { scheduleJobs }     = require('./utils/cronJobs');
+
 require('dotenv').config();
 
 const app = express();
+const PORT = process.env.PORT || 3003;
 
 // Middlewares
 app.use(cors());
 app.use(helmet());
-app.use(express.json());
+app.use(bodyParser.json());
 
 // Example simple route
-app.get('/', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ message: 'SpendSmart Microservice Running!' });
 });
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('MongoDB Connected'))
-.catch(err => console.error('MongoDB connection error:', err));
+const budgetRoutes = require('./routes/budgetRoutes');
+app.use('/api/budgets', budgetRoutes);
 
-// Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const savingRoutes = require('./routes/savingRoutes');
+app.use('/api/savings', savingRoutes);
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(async () => {
+    console.log('Budget-Savings Service: MongoDB Connected Successfully');
+    await loadCategoryMap();          // build PFC lookup first :contentReference[oaicite:6]{index=6}
+    scheduleJobs();                   // start scheduled syncs :contentReference[oaicite:7]{index=7}
+    app.listen(PORT, () => console.log(`Budget-Savings Service running on port ${PORT}`));
+  })
+  .catch(err => console.error('Budget Savings-Service: MongoDB connection error:', err));
+

@@ -8,12 +8,15 @@ const {
     syncTransactions,
     refreshTransactions
 } = require('../controllers/transactionController');
-const { protect } = require('../middlewares/authMiddleware');
+const { protect, verifyServiceToken } = require('../middlewares/authMiddleware');
 
-router.post('/public_token', protect, createPublicToken);
-router.post('/exchange_token', protect, exchangeToken);
-router.post('/get', protect, getTransactions);
-router.post('/sync', protect, syncTransactions);
-router.post('/refresh', protect, refreshTransactions);
+
+router.post('/sync', verifyServiceToken, syncTransactions);
+router.post('/refresh', verifyServiceToken, refreshTransactions);
+
+router.use(protect);
+router.post('/public_token', createPublicToken);
+router.post('/exchange_token', exchangeToken);
+router.post('/get', getTransactions);
 
 module.exports = router;

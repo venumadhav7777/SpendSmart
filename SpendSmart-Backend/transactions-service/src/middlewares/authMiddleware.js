@@ -1,20 +1,52 @@
+// src/middlewares/authMiddleware.js
 const jwt = require('jsonwebtoken');
 
-exports.protect = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
+const protect = async (req, res, next) => {
+  let token;
 
-  if (!authHeader || !authHeader.startsWith('Bearer '))
-    return res.status(401).json({ message: 'No token provided' });
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer ')
+  ) {
+    try {
+      token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-  const token = authHeader.split(' ')[1];
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log(decoded);
-    req.user = decoded; // contains id and role if encoded in token
-    next();
-  } catch (err) {
-    res.status(401).json({ message: 'Invalid or expired token' });
+      console.log("Decoded token:", decoded);
+      // Instead of fetching full user from DB immediately, 
+      // you can trust the token for lightweight auth
+      req.user = {
+        id: decoded.id,
+        role: decoded.role,
+      };
+      next();
+    } catch (err) {
+      console.error('Auth error:', err.message);
+      return res.status(401).json({ message: 'Not authorized, token failed' });
+    }
+  } else {
+    return res.status(401).json({ message: 'Not authorized, no token' });
   }
 };
 
+// Role-based access control middleware
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ message: 'Forbidden: Access denied' });
+    }
+    next();
+  };
+};
+
+// src/middlewares/serviceAuth.js
+const verifyServiceToken = (req, res, next) => {
+  const key = req.headers['x-api-key'];
+  if (!key || key !== process.env.SERVICE_TOKEN) {
+    return res.status(401).json({ message: 'Invalid or missing service Token' });
+  }
+  next();
+};
+
+
+module.exports = { protect, authorize, verifyServiceToken };

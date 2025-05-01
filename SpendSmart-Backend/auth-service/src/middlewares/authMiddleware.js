@@ -13,13 +13,13 @@ const protect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+      console.log("Decoded token:", decoded);
       // Instead of fetching full user from DB immediately, 
       // you can trust the token for lightweight auth
       req.user = {
         id: decoded.id,
         role: decoded.role,
       };
-
       next();
     } catch (err) {
       console.error('Auth error:', err.message);
@@ -40,4 +40,12 @@ const authorize = (...roles) => {
   };
 };
 
-module.exports = { protect, authorize };
+const verifyServiceKey = (req, res, next) => {
+  const key = req.headers['x-api-key'];
+  if (!key || key !== process.env.SERVICE_TOKEN) {
+    return res.status(401).json({ message: 'Invalid or missing service Token' });
+  }
+  next();
+};
+
+module.exports = { protect, authorize, verifyServiceKey };

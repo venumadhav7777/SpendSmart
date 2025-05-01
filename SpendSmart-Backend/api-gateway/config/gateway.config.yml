@@ -13,12 +13,18 @@ apiEndpoints:
     paths: ['/api/users/*']
   transactionsAPI:
     paths: ['/api/transactions/*']
+  budgetsAPI:
+    paths: ['/api/budgets/*']
+  savingsAPI:
+    paths: ['/api/savings/*']
 
 serviceEndpoints:
   authService:
     url: 'http://localhost:3001'
   transactionsService:
     url: 'http://localhost:3002'
+  budgetSavingsService:
+    url: 'http://localhost:3003'
 
 policies:
   - cors
@@ -61,3 +67,31 @@ pipelines:
       - proxy:
           action:
             serviceEndpoint: transactionsService
+            
+  budgetsPipeline:
+    apiEndpoints: [budgetsAPI]
+    policies:
+      - cors: {}
+      - jwt:
+          action:
+            secretOrPublicKey: '${JWT_SECRET}'
+            credentialsRequired: true        # protect tx endpoints
+            algorithms: ['HS256']
+            checkCredentialExistence: false  # uncontrolled mode
+      - proxy:
+          action:
+            serviceEndpoint: budgetSavingsService
+  
+  savingsPipeline:
+    apiEndpoints: [savingsAPI]
+    policies:
+      - cors: {}
+      - jwt:
+          action:
+            secretOrPublicKey: '${JWT_SECRET}'
+            credentialsRequired: true        # protect tx endpoints
+            algorithms: ['HS256']
+            checkCredentialExistence: false  # uncontrolled mode
+      - proxy:
+          action:
+            serviceEndpoint: budgetSavingsService
