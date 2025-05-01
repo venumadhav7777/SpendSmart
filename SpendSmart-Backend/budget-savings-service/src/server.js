@@ -6,7 +6,6 @@ const helmet = require('helmet');
 const bodyParser = require('body-parser');
 
 const { loadCategoryMap } = require('./utils/categoryMap');
-const { scheduleJobs }     = require('./utils/cronJobs');
 
 require('dotenv').config();
 
@@ -34,7 +33,6 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(async () => {
     console.log('Budget-Savings Service: MongoDB Connected Successfully');
     await loadCategoryMap();          // build PFC lookup first :contentReference[oaicite:6]{index=6}
-    scheduleJobs();                   // start scheduled syncs :contentReference[oaicite:7]{index=7}
     app.listen(PORT, () => console.log(`Budget-Savings Service running on port ${PORT}`));
   })
   .catch(err => console.error('Budget Savings-Service: MongoDB connection error:', err));

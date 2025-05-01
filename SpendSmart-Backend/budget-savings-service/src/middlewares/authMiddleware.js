@@ -30,7 +30,8 @@ exports.protect = async (req, res, next) => {
     req.user = {
       id: decoded.id,
       role: decoded.role,
-      email: response.data.user.email
+      email: response.data.user.email,
+      token: token
     };
 
     console.log("User profile:", req.user);

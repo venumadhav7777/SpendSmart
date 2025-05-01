@@ -39,14 +39,4 @@ const authorize = (...roles) => {
   };
 };
 
-// src/middlewares/serviceAuth.js
-const verifyServiceToken = (req, res, next) => {
-  const key = req.headers['x-api-key'];
-  if (!key || key !== process.env.SERVICE_TOKEN) {
-    return res.status(401).json({ message: 'Invalid or missing service Token' });
-  }
-  next();
-};
-
-
-module.exports = { protect, authorize, verifyServiceToken };
+module.exports = { protect, authorize };

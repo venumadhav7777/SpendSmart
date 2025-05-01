@@ -2,17 +2,20 @@
 const SavingsGoal = require('../models/SavingsGoal');
 const { sendMail } = require('../utils/emailService');
 
-// Create a new savings goal
+/**
+ * Create a new goal
+ */
 exports.createGoal = async (req, res) => {
     try {
         const { name, target, deadline } = req.body;
-        const { id: authUser } = req.user;
+        const { id: authUser, email } = req.user;
 
         const goal = await SavingsGoal.create({
             authUser,
             name,
             target,
             deadline,
+            ownerMail: email
         });
 
         res.status(201).json(goal);
@@ -32,35 +35,6 @@ exports.getGoals = async (req, res) => {
     }
 };
 
-// Update a savings goal (e.g., contribute to saved)
-exports.updateGoal = async (req, res) => {
-    try {
-        const { id: authUser } = req.user;
-        const { goalId } = req.params;
-        const updates = req.body;
-
-        const goal = await SavingsGoal.findOneAndUpdate(
-            { _id: goalId, authUser },
-            updates,
-            { new: true }
-        );
-
-        if (!goal) return res.status(404).json({ message: 'Goal not found' });
-
-        if (goal.saved >= goal.target) {
-            await sendMail({
-              to: req.user.email,
-              subject: `Goal Reached: ${goal.name}`,
-              text: `Congratulations! You have reached your savings goal "${goal.name}".`,
-              html: `<p>Congratulations! You have reached your savings goal "<strong>${goal.name}</strong>".</p>`
-            });
-          }
-
-        res.status(200).json(goal);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-};
 
 // Delete a savings goal
 exports.deleteGoal = async (req, res) => {
@@ -79,20 +53,114 @@ exports.deleteGoal = async (req, res) => {
     }
 };
 
+/**
+ * Manual contribution: also records a 'manual' contribution subdoc
+ */
+exports.updateGoal = async (req, res) => {
+    try {
+        const { id: authUser, email } = req.user;
+        const { goalId } = req.params;
+        const { saved: newSavedValue } = req.body;
 
-// GET /api/savings/progress
+        // Find and update the saved total
+        const goal = await SavingsGoal.findOne({ _id: goalId, authUser });
+        if (!goal) return res.status(404).json({ message: 'Goal not found' });
+
+        const contributionAmount = newSavedValue - goal.saved;
+        if (contributionAmount > 0) {
+            // 1) update the total saved
+            goal.saved = newSavedValue;
+
+            // 2) record the contribution
+            goal.contributions.push({
+                amount: contributionAmount,
+                type: 'manual'
+            });  // subdocument push :contentReference[oaicite:2]{index=2}
+
+            await goal.save();
+        }
+
+        // 3) send congrats if reached
+        if (goal.saved >= goal.target) {
+            await sendMail({
+                to: email,
+                subject: `Goal Reached: ${goal.name}`,
+                text: `🎉 You’ve reached your savings goal "${goal.name}"!`
+            });
+        }
+
+        res.json(goal);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+/**
+ * Auto-allocation via 50/30/20: records 'auto' contributions
+ */
+exports.allocateSavings = async (req, res) => {
+    try {
+        const { amount } = req.body;
+        const authUser = req.user.id;
+
+        const savingsPortion = amount * 0.2;
+        const goals = await SavingsGoal.find({ authUser });
+        if (!goals.length) {
+            return res.status(400).json({ message: 'No goals to allocate to.' });
+        }
+
+        const totalRemaining = goals.reduce((sum, g) => sum + (g.target - g.saved), 0);
+        if (totalRemaining === 0) {
+            return res.status(400).json({ message: 'All goals complete.' });
+        }
+
+        const results = [];
+        for (let g of goals) {
+            const share = Math.round(((g.target - g.saved) / totalRemaining) * savingsPortion);
+            if (share <= 0) continue;
+
+            // update the saved total
+            g.saved = Math.min(g.saved + share, g.target);
+
+            // record the auto contribution
+            g.contributions.push({
+                amount: share,
+                type: 'auto'
+            });
+
+            await g.save();
+            results.push({ goalId: g._id, name: g.name, newSaved: g.saved });
+        }
+
+        res.json({ allocated: savingsPortion, details: results });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+/**
+ * Fetch progress with full history if needed
+ */
 exports.getSavingsProgress = async (req, res) => {
     try {
         const authUser = req.user.id;
         const goals = await SavingsGoal.find({ authUser });
 
-        const progress = goals.map(g => ({
-            goalId: g._id,
-            name: g.name,
-            target: g.target,
-            saved: g.saved,
-            percentComplete: g.target > 0 ? Math.round((g.saved / g.target) * 100) : 0
-        }));
+        const progress = goals.map(g => {
+            const percent = g.target > 0 ? Math.round((g.saved / g.target) * 100) : 0;
+            const daysLeft = g.deadline
+                ? Math.ceil((new Date(g.deadline) - new Date()) / (1000 * 60 * 60 * 24))
+                : null;
+            return {
+                goalId: g._id,
+                name: g.name,
+                target: g.target,
+                saved: g.saved,
+                percentComplete: percent,
+                daysLeft,
+                contributions: g.contributions   // full subdocument array :contentReference[oaicite:3]{index=3}
+            };
+        });
 
         res.json(progress);
     } catch (err) {

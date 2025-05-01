@@ -110,7 +110,7 @@ exports.syncTransactions = async (req, res) => {
       await Transaction.deleteMany({ transaction_id: { $in: ids } });
     }
 
-    res.json({ added: data.added.length, has_more: data.has_more });
+    res.status(200).json(data);
   } catch (err) {
     res.status(500).json({ error: err.response?.data || err.message });
   }

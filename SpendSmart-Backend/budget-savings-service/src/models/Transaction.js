@@ -10,6 +10,7 @@ const transactionSchema = new mongoose.Schema({
     category: { type: [String] },
     pending: { type: Boolean, default: false },
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    budgetCategory: { type: String }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Transaction', transactionSchema);

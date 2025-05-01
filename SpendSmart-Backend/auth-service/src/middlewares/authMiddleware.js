@@ -40,12 +40,4 @@ const authorize = (...roles) => {
   };
 };
 
-const verifyServiceKey = (req, res, next) => {
-  const key = req.headers['x-api-key'];
-  if (!key || key !== process.env.SERVICE_TOKEN) {
-    return res.status(401).json({ message: 'Invalid or missing service Token' });
-  }
-  next();
-};
-
-module.exports = { protect, authorize, verifyServiceKey };
+module.exports = { protect, authorize };

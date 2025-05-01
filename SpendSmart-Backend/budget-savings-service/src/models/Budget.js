@@ -7,7 +7,10 @@ const budgetSchema = new mongoose.Schema({
     category: { type: String, required: true },
     limit: { type: Number, required: true },
     period: { type: String, enum: ['monthly', 'weekly'], default: 'monthly' },
-    ownerMail: { type: String, required: true }
+    ownerMail: { type: String, required: true },
+    spent: {type: Number, default: 0},
+    remaining: {type: Number, default: 0},
+    percentUsed: {type: Number, default: 0}
 }, { timestamps: true });
 
 module.exports = mongoose.model('Budget', budgetSchema);
