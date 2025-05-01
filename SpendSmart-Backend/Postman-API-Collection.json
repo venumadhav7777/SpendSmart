@@ -16,8 +16,8 @@
                             "listen": "test",
                             "script": {
                                 "exec": [
-                                    "const response = pm.response.json();\r",
-                                    "pm.variables.set(\"token\", response.token);"
+                                    "const response = await pm.response.json();\r",
+                                    "pm.collectionVariables.set(\"token\", response.token);"
                                 ],
                                 "type": "text/javascript",
                                 "packages": {}
@@ -32,7 +32,7 @@
                         "header": [],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\r\n  \"name\": \"Ruby\",\r\n  \"email\": \"ruby@example.com\",\r\n  \"password\": \"securepass123\"\r\n}\r\n",
+                            "raw": "{\r\n  \"name\": \"Aashin K S\",\r\n  \"email\": \"aashin.ks@ust.com\",\r\n  \"password\": \"securepass123\"\r\n}\r\n",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -40,11 +40,10 @@
                             }
                         },
                         "url": {
-                            "raw": "localhost:3001/api/auth/register",
+                            "raw": "{{baseUrl}}/api/auth/register",
                             "host": [
-                                "localhost"
+                                "{{baseUrl}}"
                             ],
-                            "port": "3001",
                             "path": [
                                 "api",
                                 "auth",
@@ -61,8 +60,8 @@
                             "listen": "test",
                             "script": {
                                 "exec": [
-                                    "const response = pm.response.json();\r",
-                                    "pm.variables.set(\"token\", response.token);\r",
+                                    "const response = await pm.response.json();\r",
+                                    "pm.collectionVariables.set(\"token\", response.token);\r",
                                     ""
                                 ],
                                 "type": "text/javascript",
@@ -78,7 +77,7 @@
                         "header": [],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\r\n  \"email\": \"ruby@example.com\",\r\n  \"password\": \"securepass123\"\r\n}\r\n",
+                            "raw": "{\r\n  \"email\": \"aashin.ks@ust.com\",\r\n  \"password\": \"securepass123\"\r\n}\r\n",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -86,11 +85,10 @@
                             }
                         },
                         "url": {
-                            "raw": "localhost:3001/api/auth/login",
+                            "raw": "{{baseUrl}}/api/auth/login",
                             "host": [
-                                "localhost"
+                                "{{baseUrl}}"
                             ],
-                            "port": "3001",
                             "path": [
                                 "api",
                                 "auth",
@@ -128,11 +126,10 @@
                             }
                         },
                         "url": {
-                            "raw": "localhost:3001/api/users/profile",
+                            "raw": "{{baseUrl}}/api/users/profile",
                             "host": [
-                                "localhost"
+                                "{{baseUrl}}"
                             ],
-                            "port": "3001",
                             "path": [
                                 "api",
                                 "users",
@@ -336,6 +333,390 @@
                         }
                     },
                     "response": []
+                }
+            ]
+        },
+        {
+            "name": "SpendSmart Budget-Savings Service",
+            "item": [
+                {
+                    "name": "Budgets",
+                    "item": [
+                        {
+                            "name": "Create Budget",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"name\": \"Daily Shopping\",\n  \"category\": \"Shopping\",\n  \"limit\": 500,\n  \"period\": \"monthly\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/budgets/",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "budgets",
+                                        ""
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Budgets",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/budgets/",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "budgets",
+                                        ""
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Budget",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"limit\": 1000\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/budgets/{{budgetId}}",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "budgets",
+                                        "{{budgetId}}"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Budget",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/budgets/{{budgetId}}",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "budgets",
+                                        "{{budgetId}}"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Budget Summary",
+                            "protocolProfileBehavior": {
+                                "disableBodyPruning": true
+                            },
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/budgets/summary",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "budgets",
+                                        "summary"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Savings",
+                    "item": [
+                        {
+                            "name": "Create Savings Goal",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"name\": \"Vacation Fund\",\n  \"target\": 2000,\n  \"deadline\": \"2025-12-31\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/savings/",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "savings",
+                                        ""
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get All Savings Goals",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/savings/",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "savings",
+                                        ""
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Savings Goal (Contribute)",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"saved\": 500\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/savings/{{goalId}}",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "savings",
+                                        "{{goalId}}"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Savings Goal",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/savings/{{goalId}}",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "savings",
+                                        "{{goalId}}"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Savings Progress",
+                            "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/savings/progress",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "savings",
+                                        "progress"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Allocate Savings (50/30/20)",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{token}}"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"amount\": 1000\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/savings/allocate",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "savings",
+                                        "allocate"
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
                 }
             ]
         }
