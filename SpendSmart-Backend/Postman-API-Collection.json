@@ -32,7 +32,7 @@
                         "header": [],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\r\n  \"name\": \"Aashin K S\",\r\n  \"email\": \"aashin.ks@ust.com\",\r\n  \"password\": \"securepass123\"\r\n}\r\n",
+                            "raw": "{\r\n  \"name\": \"Ruby Jose\",\r\n  \"email\": \"ruby.jose@ust.com\",\r\n  \"password\": \"securepass123\"\r\n}\r\n",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -77,7 +77,7 @@
                         "header": [],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\r\n  \"email\": \"aashin.ks@ust.com\",\r\n  \"password\": \"securepass123\"\r\n}\r\n",
+                            "raw": "{\r\n  \"email\": \"ruby.jose@ust.com\",\r\n  \"password\": \"securepass123\"\r\n}\r\n",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -687,12 +687,18 @@
                         {
                             "name": "Allocate Savings (50/30/20)",
                             "request": {
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
                                 "method": "POST",
                                 "header": [
-                                    {
-                                        "key": "Authorization",
-                                        "value": "Bearer {{token}}"
-                                    },
                                     {
                                         "key": "Content-Type",
                                         "value": "application/json"
