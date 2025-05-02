@@ -1,764 +1,857 @@
 {
-    "info": {
-        "_postman_id": "f5b7c426-222c-4412-9c90-1e67feb12e8a",
-        "name": "SpendSmart",
-        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-        "_exporter_id": "39079537"
-    },
-    "item": [
-        {
-            "name": "SpendSmart Auth Service",
-            "item": [
-                {
-                    "name": "1. Register User",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "exec": [
-                                    "const response = await pm.response.json();\r",
-                                    "pm.collectionVariables.set(\"token\", response.token);"
-                                ],
-                                "type": "text/javascript",
-                                "packages": {}
-                            }
-                        }
-                    ],
-                    "request": {
-                        "auth": {
-                            "type": "noauth"
-                        },
-                        "method": "POST",
-                        "header": [],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\r\n  \"name\": \"Ruby Jose\",\r\n  \"email\": \"ruby.jose@ust.com\",\r\n  \"password\": \"securepass123\"\r\n}\r\n",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        },
-                        "url": {
-                            "raw": "{{baseUrl}}/api/auth/register",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "auth",
-                                "register"
-                            ]
-                        }
-                    },
-                    "response": []
-                },
-                {
-                    "name": "2. User Login",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "exec": [
-                                    "const response = await pm.response.json();\r",
-                                    "pm.collectionVariables.set(\"token\", response.token);\r",
-                                    ""
-                                ],
-                                "type": "text/javascript",
-                                "packages": {}
-                            }
-                        }
-                    ],
-                    "request": {
-                        "auth": {
-                            "type": "noauth"
-                        },
-                        "method": "POST",
-                        "header": [],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\r\n  \"email\": \"ruby.jose@ust.com\",\r\n  \"password\": \"securepass123\"\r\n}\r\n",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        },
-                        "url": {
-                            "raw": "{{baseUrl}}/api/auth/login",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "auth",
-                                "login"
-                            ]
-                        }
-                    },
-                    "response": []
-                },
-                {
-                    "name": "3. Get Current Logged in User",
-                    "protocolProfileBehavior": {
-                        "disableBodyPruning": true
-                    },
-                    "request": {
-                        "auth": {
-                            "type": "bearer",
-                            "bearer": [
-                                {
-                                    "key": "token",
-                                    "value": "{{token}}",
-                                    "type": "string"
-                                }
-                            ]
-                        },
-                        "method": "GET",
-                        "header": [],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        },
-                        "url": {
-                            "raw": "{{baseUrl}}/api/users/profile",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "users",
-                                "profile"
-                            ]
-                        }
-                    },
-                    "response": []
-                }
-            ]
-        },
-        {
-            "name": "SpendSmart Transactions Service",
-            "item": [
-                {
-                    "name": "1. Create Public Token",
-                    "request": {
-                        "auth": {
-                            "type": "bearer",
-                            "bearer": [
-                                {
-                                    "key": "token",
-                                    "value": "{{token}}",
-                                    "type": "string"
-                                }
-                            ]
-                        },
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"institution_id\": \"ins_20\",\n  \"initial_products\": [\"transactions\"]\n}"
-                        },
-                        "url": {
-                            "raw": "{{baseUrl}}/api/transactions/public_token",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "transactions",
-                                "public_token"
-                            ]
-                        }
-                    },
-                    "response": []
-                },
-                {
-                    "name": "2. Exchange Public Token",
-                    "request": {
-                        "auth": {
-                            "type": "bearer",
-                            "bearer": [
-                                {
-                                    "key": "token",
-                                    "value": "{{token}}",
-                                    "type": "string"
-                                }
-                            ]
-                        },
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{}"
-                        },
-                        "url": {
-                            "raw": "{{baseUrl}}/api/transactions/exchange_token",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "transactions",
-                                "exchange_token"
-                            ]
-                        }
-                    },
-                    "response": []
-                },
-                {
-                    "name": "3. Get Transactions",
-                    "request": {
-                        "auth": {
-                            "type": "bearer",
-                            "bearer": [
-                                {
-                                    "key": "token",
-                                    "value": "{{token}}",
-                                    "type": "string"
-                                }
-                            ]
-                        },
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"start_date\": \"2023-01-01\",\n  \"end_date\": \"2025-12-31\"\n}"
-                        },
-                        "url": {
-                            "raw": "{{baseUrl}}/api/transactions/get",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "transactions",
-                                "get"
-                            ]
-                        }
-                    },
-                    "response": []
-                },
-                {
-                    "name": "4. Sync Transactions",
-                    "request": {
-                        "auth": {
-                            "type": "bearer",
-                            "bearer": [
-                                {
-                                    "key": "token",
-                                    "value": "{{token}}",
-                                    "type": "string"
-                                }
-                            ]
-                        },
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"count\": 500\n}"
-                        },
-                        "url": {
-                            "raw": "{{baseUrl}}/api/transactions/sync",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "transactions",
-                                "sync"
-                            ]
-                        }
-                    },
-                    "response": []
-                },
-                {
-                    "name": "5. Refresh Transactions",
-                    "request": {
-                        "auth": {
-                            "type": "bearer",
-                            "bearer": [
-                                {
-                                    "key": "token",
-                                    "value": "{{token}}",
-                                    "type": "string"
-                                }
-                            ]
-                        },
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{}"
-                        },
-                        "url": {
-                            "raw": "{{baseUrl}}/api/transactions/refresh",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "transactions",
-                                "refresh"
-                            ]
-                        }
-                    },
-                    "response": []
-                }
-            ]
-        },
-        {
-            "name": "SpendSmart Budget-Savings Service",
-            "item": [
-                {
-                    "name": "Budgets",
-                    "item": [
-                        {
-                            "name": "Create Budget",
-                            "request": {
-                                "auth": {
-                                    "type": "bearer",
-                                    "bearer": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{token}}",
-                                            "type": "string"
-                                        }
-                                    ]
-                                },
-                                "method": "POST",
-                                "header": [
-                                    {
-                                        "key": "Content-Type",
-                                        "value": "application/json"
-                                    }
-                                ],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n  \"name\": \"Daily Shopping\",\n  \"category\": \"Shopping\",\n  \"limit\": 500,\n  \"period\": \"monthly\"\n}"
-                                },
-                                "url": {
-                                    "raw": "{{baseUrl}}/api/budgets/",
-                                    "host": [
-                                        "{{baseUrl}}"
-                                    ],
-                                    "path": [
-                                        "api",
-                                        "budgets",
-                                        ""
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Get Budgets",
-                            "request": {
-                                "method": "GET",
-                                "header": [
-                                    {
-                                        "key": "Authorization",
-                                        "value": "Bearer {{token}}"
-                                    }
-                                ],
-                                "url": {
-                                    "raw": "{{baseUrl}}/api/budgets/",
-                                    "host": [
-                                        "{{baseUrl}}"
-                                    ],
-                                    "path": [
-                                        "api",
-                                        "budgets",
-                                        ""
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Update Budget",
-                            "request": {
-                                "auth": {
-                                    "type": "bearer",
-                                    "bearer": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{token}}",
-                                            "type": "string"
-                                        }
-                                    ]
-                                },
-                                "method": "PUT",
-                                "header": [
-                                    {
-                                        "key": "Content-Type",
-                                        "value": "application/json"
-                                    },
-                                    {
-                                        "key": "Authorization",
-                                        "value": "Bearer {{token}}"
-                                    }
-                                ],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n  \"limit\": 1000\n}"
-                                },
-                                "url": {
-                                    "raw": "{{baseUrl}}/api/budgets/{{budgetId}}",
-                                    "host": [
-                                        "{{baseUrl}}"
-                                    ],
-                                    "path": [
-                                        "api",
-                                        "budgets",
-                                        "{{budgetId}}"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Delete Budget",
-                            "request": {
-                                "auth": {
-                                    "type": "bearer",
-                                    "bearer": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{token}}",
-                                            "type": "string"
-                                        }
-                                    ]
-                                },
-                                "method": "DELETE",
-                                "header": [
-                                    {
-                                        "key": "Authorization",
-                                        "value": "Bearer {{token}}"
-                                    }
-                                ],
-                                "url": {
-                                    "raw": "{{baseUrl}}/api/budgets/{{budgetId}}",
-                                    "host": [
-                                        "{{baseUrl}}"
-                                    ],
-                                    "path": [
-                                        "api",
-                                        "budgets",
-                                        "{{budgetId}}"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Budget Summary",
-                            "protocolProfileBehavior": {
-                                "disableBodyPruning": true
-                            },
-                            "request": {
-                                "auth": {
-                                    "type": "bearer",
-                                    "bearer": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{token}}",
-                                            "type": "string"
-                                        }
-                                    ]
-                                },
-                                "method": "GET",
-                                "header": [],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{baseUrl}}/api/budgets/summary",
-                                    "host": [
-                                        "{{baseUrl}}"
-                                    ],
-                                    "path": [
-                                        "api",
-                                        "budgets",
-                                        "summary"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        }
-                    ]
-                },
-                {
-                    "name": "Savings",
-                    "item": [
-                        {
-                            "name": "Create Savings Goal",
-                            "request": {
-                                "auth": {
-                                    "type": "bearer",
-                                    "bearer": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{token}}",
-                                            "type": "string"
-                                        }
-                                    ]
-                                },
-                                "method": "POST",
-                                "header": [
-                                    {
-                                        "key": "Content-Type",
-                                        "value": "application/json"
-                                    }
-                                ],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n  \"name\": \"Vacation Fund\",\n  \"target\": 2000,\n  \"deadline\": \"2025-12-31\"\n}"
-                                },
-                                "url": {
-                                    "raw": "{{baseUrl}}/api/savings/",
-                                    "host": [
-                                        "{{baseUrl}}"
-                                    ],
-                                    "path": [
-                                        "api",
-                                        "savings",
-                                        ""
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Get All Savings Goals",
-                            "request": {
-                                "auth": {
-                                    "type": "bearer",
-                                    "bearer": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{token}}",
-                                            "type": "string"
-                                        }
-                                    ]
-                                },
-                                "method": "GET",
-                                "header": [],
-                                "url": {
-                                    "raw": "{{baseUrl}}/api/savings/",
-                                    "host": [
-                                        "{{baseUrl}}"
-                                    ],
-                                    "path": [
-                                        "api",
-                                        "savings",
-                                        ""
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Update Savings Goal (Contribute)",
-                            "request": {
-                                "auth": {
-                                    "type": "bearer",
-                                    "bearer": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{token}}",
-                                            "type": "string"
-                                        }
-                                    ]
-                                },
-                                "method": "PUT",
-                                "header": [
-                                    {
-                                        "key": "Content-Type",
-                                        "value": "application/json"
-                                    }
-                                ],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n  \"saved\": 500\n}"
-                                },
-                                "url": {
-                                    "raw": "{{baseUrl}}/api/savings/{{goalId}}",
-                                    "host": [
-                                        "{{baseUrl}}"
-                                    ],
-                                    "path": [
-                                        "api",
-                                        "savings",
-                                        "{{goalId}}"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Delete Savings Goal",
-                            "request": {
-                                "method": "DELETE",
-                                "header": [
-                                    {
-                                        "key": "Authorization",
-                                        "value": "Bearer {{token}}"
-                                    }
-                                ],
-                                "url": {
-                                    "raw": "{{baseUrl}}/api/savings/{{goalId}}",
-                                    "host": [
-                                        "{{baseUrl}}"
-                                    ],
-                                    "path": [
-                                        "api",
-                                        "savings",
-                                        "{{goalId}}"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Get Savings Progress",
-                            "request": {
-                                "auth": {
-                                    "type": "bearer",
-                                    "bearer": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{token}}",
-                                            "type": "string"
-                                        }
-                                    ]
-                                },
-                                "method": "GET",
-                                "header": [],
-                                "url": {
-                                    "raw": "{{baseUrl}}/api/savings/progress",
-                                    "host": [
-                                        "{{baseUrl}}"
-                                    ],
-                                    "path": [
-                                        "api",
-                                        "savings",
-                                        "progress"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        },
-                        {
-                            "name": "Allocate Savings (50/30/20)",
-                            "request": {
-                                "auth": {
-                                    "type": "bearer",
-                                    "bearer": [
-                                        {
-                                            "key": "token",
-                                            "value": "{{token}}",
-                                            "type": "string"
-                                        }
-                                    ]
-                                },
-                                "method": "POST",
-                                "header": [
-                                    {
-                                        "key": "Content-Type",
-                                        "value": "application/json"
-                                    }
-                                ],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n  \"amount\": 1000\n}"
-                                },
-                                "url": {
-                                    "raw": "{{baseUrl}}/api/savings/allocate",
-                                    "host": [
-                                        "{{baseUrl}}"
-                                    ],
-                                    "path": [
-                                        "api",
-                                        "savings",
-                                        "allocate"
-                                    ]
-                                }
-                            },
-                            "response": []
-                        }
-                    ]
-                }
-            ]
-        }
-    ],
-    "event": [
-        {
-            "listen": "prerequest",
-            "script": {
-                "type": "text/javascript",
-                "packages": {},
-                "exec": [
-                    ""
-                ]
-            }
-        },
-        {
-            "listen": "test",
-            "script": {
-                "type": "text/javascript",
-                "packages": {},
-                "exec": [
-                    ""
-                ]
-            }
-        }
-    ],
-    "variable": [
-        {
-            "key": "token",
-            "value": "",
-            "type": "string"
-        },
-        {
-            "key": "baseUrl",
-            "value": "",
-            "type": "default"
-        }
-    ]
+	"info": {
+		"_postman_id": "f5b7c426-222c-4412-9c90-1e67feb12e8a",
+		"name": "SpendSmart",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39079537"
+	},
+	"item": [
+		{
+			"name": "SpendSmart Auth Service",
+			"item": [
+				{
+					"name": "1. Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = await pm.response.json();\r",
+									"pm.collectionVariables.set(\"token\", response.token);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Ruby Jose\",\r\n  \"email\": \"ruby.jose@ust.com\",\r\n  \"password\": \"securepass123\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2. User Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = await pm.response.json();\r",
+									"pm.collectionVariables.set(\"token\", response.token);\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"ruby.jose@ust.com\",\r\n  \"password\": \"securepass123\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Get Current Logged in User",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "SpendSmart Transactions Service",
+			"item": [
+				{
+					"name": "1. Create Public Token",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"institution_id\": \"ins_20\",\n  \"initial_products\": [\"transactions\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/transactions/public_token",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"public_token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2. Exchange Public Token",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/transactions/exchange_token",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"exchange_token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Get Transactions",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"start_date\": \"2023-01-01\",\n  \"end_date\": \"2025-12-31\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/transactions/get",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"get"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Sync Transactions",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"count\": 500\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/transactions/sync",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"sync"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5. Refresh Transactions",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/transactions/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transactions",
+								"refresh"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "SpendSmart Budget-Savings Service",
+			"item": [
+				{
+					"name": "Budgets",
+					"item": [
+						{
+							"name": "Create Budget",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Daily Shopping\",\n  \"category\": \"Shopping\",\n  \"limit\": 500,\n  \"period\": \"monthly\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/budgets/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"budgets",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Budgets",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/budgets/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"budgets",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Budget",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"limit\": 1000\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/budgets/{{budgetId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"budgets",
+										"{{budgetId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Budget",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/budgets/{{budgetId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"budgets",
+										"{{budgetId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Budget Summary",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/budgets/summary",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"budgets",
+										"summary"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Savings",
+					"item": [
+						{
+							"name": "Create Savings Goal",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Vacation Fund\",\n  \"target\": 2000,\n  \"deadline\": \"2025-12-31\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/savings/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"savings",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Savings Goals",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/savings/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"savings",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Savings Goal (Contribute)",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"saved\": 500\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/savings/{{goalId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"savings",
+										"{{goalId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Savings Goal",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/api/savings/{{goalId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"savings",
+										"{{goalId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Savings Progress",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/savings/progress",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"savings",
+										"progress"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Allocate Savings (50/30/20)",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"amount\": 1000\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/savings/allocate",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"savings",
+										"allocate"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "AI Advisor Service",
+			"item": [
+				{
+					"name": "ChatOllama",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"messages\": [\r\n        {\r\n            \"role\": \"system\",\r\n            \"content\": \"You are a helpful financial advisor.\"\r\n        },\r\n        {\r\n            \"role\": \"user\",\r\n            \"content\": \"How can I save more this month?\"\r\n        }\r\n    ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/ai-advisor/chat",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ai-advisor",
+								"chat"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Load Model",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/ai-advisor/loadModel",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ai-advisor",
+								"loadModel"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "baseUrl",
+			"value": "",
+			"type": "default"
+		}
+	]
 }

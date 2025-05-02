@@ -91,6 +91,8 @@ services:
       - ai-llm
     environment:
       - PORT=3004
+      - JWT_SECRET=supersecretkey123456789
+      - AUTH_SERVICE_URL=http://auth-service:3001
       - MODEL_NAME=llama3.2
       - MODEL_PROVIDER=ollama
       - OLLAMA_HOST=http://ai-llm:11434

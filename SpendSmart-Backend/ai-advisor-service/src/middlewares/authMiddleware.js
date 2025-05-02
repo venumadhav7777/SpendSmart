@@ -18,27 +18,13 @@ exports.protect = async (req, res, next) => {
 
   // At this point we have decoded.id and decoded.role
   // Now fetch the user’s profile (including email) from Auth Service
-  try {
-    const response = await axios.get(
-      `${process.env.AUTH_SERVICE_URL}/api/users/profile`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    console.log("User profile response:", response.data);
-
-    // Attach everything to req.user
+  
     req.user = {
       id: decoded.id,
       role: decoded.role,
-      email: response.data.user.email,
-      token: token
     };
 
     console.log("User profile:", req.user);
 
     return next();
-  } catch (err) {
-    console.error('Failed to fetch user profile:', err.message);
-    return res.status(401).json({ message: 'Not authorized, user not found' });
-  }
 };

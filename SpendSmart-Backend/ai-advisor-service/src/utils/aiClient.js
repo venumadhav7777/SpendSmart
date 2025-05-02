@@ -5,24 +5,35 @@ const ollamaHost = process.env.OLLAMA_HOST;
 const model = process.env.MODEL_NAME;
 
 exports.getAICompletion = async (messages) => {
-    // non-streaming (existing behavior)
+    // 1) Empty array → just load the model into memory
+    if (!messages.length) {
+        const resp = await axios.post(
+            `${ollamaHost}/api/chat`,
+            { model, messages },
+            { headers: { 'Content-Type': 'application/json' } }
+        );
+        // resp.data.done_reason will be "load" and message.content === ""
+        return resp.data.message?.content ?? null;
+    }
+
+    // 2) Non-streaming chat completion
     const resp = await axios.post(
         `${ollamaHost}/api/chat`,
         { model, messages, stream: false },
         { headers: { 'Content-Type': 'application/json' } }
     );
     return resp.data.message?.content ?? null;
-}
+};
 
 exports.getAIStream = async (messages) => {
-  const resp = await axios.post(
-    `${ollamaHost}/api/chat`,
-    { model, messages },
-    { responseType: 'stream' }
-  );
+    const resp = await axios.post(
+        `${ollamaHost}/api/chat`,
+        { model, messages },
+        { responseType: 'stream' }
+    );
 
-  // resp.data is a Node.js Readable stream of NDJSON frames
-  return resp.data.pipe(ndjson.parse());
+    // resp.data is a Node.js Readable stream of NDJSON frames
+    return resp.data.pipe(ndjson.parse());
 };
 
 
