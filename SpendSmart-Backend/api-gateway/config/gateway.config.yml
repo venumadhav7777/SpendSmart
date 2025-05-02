@@ -20,11 +20,11 @@ apiEndpoints:
 
 serviceEndpoints:
   authService:
-    url: 'http://localhost:3001'
+    url: '${AUTH_SERVICE_URL}'
   transactionsService:
-    url: 'http://localhost:3002'
+    url: '${TRANSACTIONS_SERVICE_URL}'
   budgetSavingsService:
-    url: 'http://localhost:3003'
+    url: '${BUDGET_SAVINGS_SERVICE_URL}'
 
 policies:
   - cors

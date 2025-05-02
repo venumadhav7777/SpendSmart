@@ -1,0 +1,76 @@
+version: '3.8'
+services:
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    networks:
+      - spendsmart-net
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - MONGODB_URI=mongodb://mongo:27017/spendsmart_auth
+      - JWT_SECRET=supersecretkey123456789
+    networks:
+      - spendsmart-net
+    
+  transactions-service:
+    build: ./transactions-service
+    container_name: transactions-service
+    ports:
+      - "3002:3002"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/spendsmart_transactions
+      - PORT=3002
+      - JWT_SECRET=supersecretkey123456789
+      - PLAID_CLIENT_ID=
+      - PLAID_SECRET=
+      - PLAID_ENV=sandbox
+    networks:
+      - spendsmart-net
+    
+  budget-savings-service:
+    build: ./budget-savings-service
+    container_name: budget-savings-service
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - MONGODB_URI=mongodb://mongo:27017/spendsmart_budget
+      - JWT_SECRET=supersecretkey123456789
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USER=
+      - SMTP_PASS=
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - TRANSACTIONS_SERVICE_URL=http://transactions-service:3002
+    networks:
+      - spendsmart-net
+  
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "9090:9090"
+      - "9876:9876"       
+    depends_on:
+      - auth-service
+      - transactions-service
+      - budget-savings-service
+      # - ai-advisor-service
+    environment:
+      - JWT_SECRET=supersecretkey123456789
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - TRANSACTIONS_SERVICE_URL=http://transactions-service:3002
+      - BUDGET_SAVINGS_SERVICE_URL=http://budget-savings-service:3003
+    networks:
+      - spendsmart-net
+
+networks:
+  spendsmart-net:
+    driver: bridge
