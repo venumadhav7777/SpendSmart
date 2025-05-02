@@ -10,8 +10,5 @@ RUN npm install --production
 # Copy source
 COPY . .
 
-# Build step (if any)
-# RUN npm run build
-
 EXPOSE 3004
 CMD ["npm", "run", "dev"]

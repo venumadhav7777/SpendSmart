@@ -17,6 +17,8 @@ apiEndpoints:
     paths: ['/api/budgets/*']
   savingsAPI:
     paths: ['/api/savings/*']
+  aiAdvisorAPI:
+    paths: ['/api/ai-advisor/*']
 
 serviceEndpoints:
   authService:
@@ -25,6 +27,8 @@ serviceEndpoints:
     url: '${TRANSACTIONS_SERVICE_URL}'
   budgetSavingsService:
     url: '${BUDGET_SAVINGS_SERVICE_URL}'
+  aiAdvisorService:
+    url: '${AI_ADVISOR_SERVICE_URL}'
 
 policies:
   - cors
@@ -95,3 +99,17 @@ pipelines:
       - proxy:
           action:
             serviceEndpoint: budgetSavingsService
+  
+  aiAdvisorPipeline:
+    apiEndpoints: [aiAdvisorAPI]
+    policies:
+      - cors: {}
+      - jwt:
+          action:
+            secretOrPublicKey: '${JWT_SECRET}'
+            credentialsRequired: true        # protect tx endpoints
+            algorithms: ['HS256']
+            checkCredentialExistence: false  # uncontrolled mode
+      - proxy:
+          action:
+            serviceEndpoint: aiAdvisorService

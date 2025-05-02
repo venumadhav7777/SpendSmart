@@ -7,6 +7,8 @@ services:
       - "27017:27017"
     networks:
       - spendsmart-net
+    volumes:
+      - mongo-data:/data/db
 
   auth-service:
     build: ./auth-service
@@ -19,6 +21,8 @@ services:
       - JWT_SECRET=supersecretkey123456789
     networks:
       - spendsmart-net
+    # volumes:
+    #   - ./auth-service:/app
     
   transactions-service:
     build: ./transactions-service
@@ -34,6 +38,8 @@ services:
       - PLAID_ENV=sandbox
     networks:
       - spendsmart-net
+    # volumes:
+    #   - ./transactions-service:/app
     
   budget-savings-service:
     build: ./budget-savings-service
@@ -52,6 +58,8 @@ services:
       - TRANSACTIONS_SERVICE_URL=http://transactions-service:3002
     networks:
       - spendsmart-net
+    # volumes:
+    #   - ./budget-savings-service:/app
   
   api-gateway:
     build: ./api-gateway
@@ -62,14 +70,47 @@ services:
       - auth-service
       - transactions-service
       - budget-savings-service
-      # - ai-advisor-service
+      - ai-advisor-service
     environment:
       - JWT_SECRET=supersecretkey123456789
       - AUTH_SERVICE_URL=http://auth-service:3001
       - TRANSACTIONS_SERVICE_URL=http://transactions-service:3002
       - BUDGET_SAVINGS_SERVICE_URL=http://budget-savings-service:3003
+      - AI_ADVISOR_SERVICE_URL=http://ai-advisor-service:3004
     networks:
       - spendsmart-net
+    # volumes:
+    #   - ./api-gateway:/app
+  
+  ai-advisor-service:
+    build: ./ai-advisor-service
+    container_name: ai-advisor-service
+    ports:
+      - "3004:3004"
+    depends_on:
+      - ai-llm
+    environment:
+      - PORT=3004
+      - MODEL_NAME=llama3.2
+      - MODEL_PROVIDER=ollama
+      - OLLAMA_HOST=http://ai-llm:11434
+    networks:
+      - spendsmart-net
+    # volumes:
+    #   - ./ai-advisor-service:/app
+
+  ai-llm:
+    image: ollama/ollama:latest
+    container_name: ai-llm
+    ports:
+      - "11434:11434"
+    volumes:
+      - ~/.ollama:/root/.ollama
+    networks:
+      - spendsmart-net
+
+volumes:
+  mongo-data:
 
 networks:
   spendsmart-net:
