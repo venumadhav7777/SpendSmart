@@ -6,5 +6,6 @@ const { protect } = require('../middlewares/authMiddleware');
 // POST /api/ai-advisor/chat
 router.use(protect);
 router.post('/chat', chatWithAI);
+router.post('/chat/stream', chatWithAI);
 router.post('/loadModel', loadModel)
 module.exports = router;
