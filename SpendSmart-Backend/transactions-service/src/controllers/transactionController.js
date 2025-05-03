@@ -129,3 +129,16 @@ exports.refreshTransactions = async (req, res) => {
     res.status(500).json({ error: err.response?.data || err.message });
   }
 };
+
+exports.getTransactionsFromDB = async (_req, res) => {
+  try {
+    const transactions = await Transaction.find()
+      .sort({ date: -1 })
+      .limit(1000);
+    console.log(transactions);
+    res.status(200).json({ transactions });
+  } catch (error) {
+    console.error('Error fetching transactions:', error);
+    res.status(500).json({ error: 'Failed to fetch transactions' });
+  }
+};

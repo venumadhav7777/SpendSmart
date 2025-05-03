@@ -6,7 +6,8 @@ const {
     exchangeToken,
     getTransactions,
     syncTransactions,
-    refreshTransactions
+    refreshTransactions,
+    getTransactionsFromDB
 } = require('../controllers/transactionController');
 const { protect } = require('../middlewares/authMiddleware');
 
@@ -16,5 +17,6 @@ router.post('/exchange_token', exchangeToken);
 router.post('/get', getTransactions);
 router.post('/sync', syncTransactions);
 router.post('/refresh', refreshTransactions);
+router.get('/db', getTransactionsFromDB);
 
 module.exports = router;

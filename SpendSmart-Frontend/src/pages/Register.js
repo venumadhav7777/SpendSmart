@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Typography, Box, TextField, Button, Alert, Link } from '@mui/material';
 import { register } from '../api';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import SectionCard from '../components/SectionCard';
 
 function Register() {
@@ -11,21 +12,24 @@ function Register() {
   const [error, setError] = useState('');
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
+  const { login: authLogin } = useAuth();
 
   const handleRegister = async () => {
     setError('');
     setErrors({});
     try {
       const response = await register(name, email, password);
-      if (response.data.success) {
-        navigate('/login');
-      }
+      // Backend returns user data and token directly
+      const { _id, name: userName, email: userEmail, role, token } = response.data;
+      
+      // Store user data and token in AuthContext
+      authLogin({ _id, name: userName, email: userEmail, role }, token);
+      
+      navigate('/dashboard');
     } catch (err) {
-      if (err.response?.data?.message === 'User already exists') {
+      if (err.response?.data?.message === 'Email already registered') {
         setError('An account with this email already exists. Please login or use a different email.');
         setErrors({ email: 'Email already registered' });
-      } else if (err.response?.data?.errors) {
-        setErrors(err.response.data.errors);
       } else if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
