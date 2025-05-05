@@ -95,8 +95,7 @@ exports.getTransactions = async (req, res) => {
     const ops = processedTransactions.map(txn => ({
       updateOne: {
         filter: {
-          transaction_id: txn.transaction_id,
-          user: user._id
+          unique_transaction_id: `${user._id}_${txn.transaction_id}`
         },
         update: {
           $set: {
@@ -104,7 +103,8 @@ exports.getTransactions = async (req, res) => {
             user: user._id,
             unique_transaction_id: `${user._id}_${txn.transaction_id}`,
             category: txn.category || [],
-            mapped_category: txn.mapped_category
+            mapped_category: txn.mapped_category,
+            pending: txn.pending // Add this line to persist pending status
           }
         },
         upsert: true
@@ -160,8 +160,7 @@ exports.syncTransactions = async (req, res) => {
     const ops = processedAddedTransactions.map(txn => ({
       updateOne: {
         filter: {
-          transaction_id: txn.transaction_id,
-          user: user._id
+          unique_transaction_id: `${user._id}_${txn.transaction_id}`
         },
         update: {
           $set: {
@@ -169,13 +168,48 @@ exports.syncTransactions = async (req, res) => {
             user: user._id,
             unique_transaction_id: `${user._id}_${txn.transaction_id}`,
             category: txn.category || [],
-            mapped_category: txn.mapped_category
+            mapped_category: txn.mapped_category,
+            pending: txn.pending // Add this line to persist pending status
           }
         },
         upsert: true
       }
     }));
-    await Transaction.bulkWrite(ops);
+
+    // upsert modified transactions
+    if (data.modified.length) {
+      const processedModifiedTransactions = data.modified.map(txn => {
+        console.log('Processing modified transaction:', txn.name);
+        const mappedCategory = debugCategoryMapping(txn.personal_finance_category);
+        return {
+          ...txn,
+          mapped_category: mappedCategory,
+          category: txn.category || [],
+          personal_finance_category: txn.personal_finance_category
+        };
+      });
+
+      const modifiedOps = processedModifiedTransactions.map(txn => ({
+        updateOne: {
+          filter: {
+            unique_transaction_id: `${user._id}_${txn.transaction_id}`
+          },
+          update: {
+            $set: {
+              ...txn,
+              user: user._id,
+              unique_transaction_id: `${user._id}_${txn.transaction_id}`,
+              category: txn.category || [],
+              mapped_category: txn.mapped_category,
+              pending: txn.pending // Persist pending status
+            }
+          },
+          upsert: true
+        }
+      }));
+
+      await Transaction.bulkWrite(modifiedOps);
+    }
 
     // delete removals if any
     if (data.removed.length) {

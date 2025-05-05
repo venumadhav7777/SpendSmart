@@ -25,7 +25,7 @@ import {
   Info as InfoIcon,
   Refresh as RefreshIcon
 } from '@mui/icons-material';
-import { fetchTransactionsFromDB, refreshTransactions, fetchTransactions, createPublicToken, exchangePublicToken } from '../api';
+import { fetchTransactionsFromDB, refreshTransactions, fetchTransactions, createPublicToken, exchangePublicToken, syncTransactions } from '../api';
 import SectionCard from '../components/SectionCard';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
@@ -88,14 +88,25 @@ function Transactions() {
     }
   };
 
+  const handleSyncTransactions = async () => {
+    try {
+      await syncTransactions();
+    } catch (err) {
+      setError('Failed to sync transactions.');
+    }
+  };
+
   const handleRefreshTransactions = async () => {
     setLoading(true);
     setError('');
     try {
-      // First refresh from Plaid
+      console.log("Refreshing Transactions")
       await refreshTransactions();
-      // Then fetch directly from Plaid
-      await handleFetchTransactions();
+      // Sync incremental updates
+      console.log("Syncing Transactions")
+      await handleSyncTransactions();
+      // Load transactions from DB
+      await loadTransactions();
     } catch (err) {
       setError('Failed to refresh transactions.');
     } finally {

@@ -32,7 +32,7 @@ import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import { motion } from 'framer-motion';
 
-const COLORS = ['#2563EB', '#0D9488', '#10B981', '#3B82F6', '#14B8A6', '#34D399'];
+const COLORS = ['#2196F3', '#4CAF50', '#F44336', '#FFC107', '#9C27B0', '#00BCD4', '#10B981', '#3B82F6', '#14B8A6', '#34D399'];
 const EMPTY_PIE_DATA = [{ name: 'No Data', value: 1 }];
 
 function Dashboard() {
@@ -206,40 +206,77 @@ function Dashboard() {
     return { color: '#4CAF50', icon: <CheckCircleIcon /> };
   };
 
+  const simplifyCategory = (category) => {
+    const categoryMap = {
+      'FOOD_AND_DRINK': 'Food & Dining',
+      'GENERAL_MERCHANDISE': 'Shopping',
+      'TRANSPORTATION': 'Transportation',
+      'ENTERTAINMENT': 'Entertainment',
+      'BILLS_AND_UTILITIES': 'Bills & Utilities',
+      'HEALTHCARE': 'Health & Fitness',
+      'TRAVEL': 'Travel',
+      'PERSONAL_CARE': 'Personal Care',
+      'EDUCATION': 'Education',
+      'GIFTS_AND_DONATIONS': 'Gifts & Donations',
+      'LOAN_PAYMENTS': 'Debt',
+      'BANK_FEES': 'Fees',
+      'INVESTMENTS': 'Investments',
+      'OTHER': 'Other'
+    };
+    return categoryMap[category] || 'Other';
+  };
+
   const processTransactions = (transactions) => {
     const categoryTotals = {};
     const categoryCounts = {};
-    const categoryColors = {
-      'Food & Dining': '#FF6B6B',
-      'Shopping': '#4ECDC4',
-      'Transportation': '#45B7D1',
-      'Entertainment': '#96CEB4',
-      'Bills & Utilities': '#FFEEAD',
-      'Health & Fitness': '#D4A5A5',
-      'Travel': '#9B59B6',
-      'Personal Care': '#3498DB',
-      'Education': '#2ECC71',
-      'Gifts & Donations': '#E74C3C',
-      'Business': '#F1C40F',
-      'Other': '#95A5A6'
-    };
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
 
+    // First pass: collect all categories and their totals
     transactions.forEach(tx => {
-      if (tx.amount < 0) { // Only process expenses
-        const category = tx.mapped_category?.primary || 'Other';
-        const amount = Math.abs(tx.amount);
+      const txDate = new Date(tx.date);
+      if (tx.amount > 0 && 
+          txDate.getMonth() === currentMonth && 
+          txDate.getFullYear() === currentYear &&
+          tx.mapped_category?.primary !== 'INCOME' && 
+          !tx.mapped_category?.primary?.includes('TRANSFER')) {
+        const originalCategory = tx.mapped_category?.primary || 'OTHER';
+        const simplifiedCategory = simplifyCategory(originalCategory);
+        const amount = tx.amount;
         
-        categoryTotals[category] = (categoryTotals[category] || 0) + amount;
-        categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+        categoryTotals[simplifiedCategory] = (categoryTotals[simplifiedCategory] || 0) + amount;
+        categoryCounts[simplifiedCategory] = (categoryCounts[simplifiedCategory] || 0) + 1;
       }
     });
 
-    return Object.entries(categoryTotals).map(([category, total]) => ({
-      category,
-      total,
-      count: categoryCounts[category],
-      color: categoryColors[category] || categoryColors['Other']
-    })).sort((a, b) => b.total - a.total);
+    // Convert to array and sort by amount
+    let sortedCategories = Object.entries(categoryTotals)
+      .map(([category, total], index) => ({
+        category,
+        total,
+        count: categoryCounts[category],
+        color: COLORS[index % COLORS.length]
+      }))
+      .sort((a, b) => b.total - a.total);
+
+    // Keep only top 5 categories and group the rest as "Other"
+    if (sortedCategories.length > 5) {
+      const topCategories = sortedCategories.slice(0, 5);
+      const otherCategories = sortedCategories.slice(5);
+      const otherTotal = otherCategories.reduce((sum, cat) => sum + cat.total, 0);
+      
+      return [
+        ...topCategories,
+        {
+          category: 'Other',
+          total: otherTotal,
+          count: otherCategories.reduce((sum, cat) => sum + cat.count, 0),
+          color: COLORS[5]
+        }
+      ];
+    }
+
+    return sortedCategories;
   };
 
   // Helper to round trend values
@@ -392,11 +429,9 @@ function Dashboard() {
                         nameKey="category"
                         cx="50%"
                         cy="50%"
-                        label={({ category, percent }) =>
-                          `${category} ${(percent * 100).toFixed(0)}%`
-                        }
                         outerRadius={80}
                         labelLine={false}
+                        label={false}
                       >
                         {processTransactions(transactions).map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
@@ -404,9 +439,34 @@ function Dashboard() {
                       </Pie>
                       <Legend verticalAlign="bottom" height={36} />
                       <Tooltip
-                        formatter={(value, name, props) =>
-                          [`$${value.toFixed(2)}`, props.payload.category]
-                        }
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            const total = processTransactions(transactions).reduce((sum, item) => sum + item.total, 0);
+                            const percent = ((data.total / total) * 100).toFixed(1);
+                            return (
+                              <Box sx={{ 
+                                bgcolor: 'background.paper', 
+                                p: 2, 
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                boxShadow: 3
+                              }}>
+                                <Typography variant="subtitle2" sx={{ color: data.color, fontWeight: 'bold' }}>
+                                  {data.category}
+                                </Typography>
+                                <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                  Amount: ${data.total.toFixed(2)}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                  {percent}% of total spending
+                                </Typography>
+                              </Box>
+                            );
+                          }
+                          return null;
+                        }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
