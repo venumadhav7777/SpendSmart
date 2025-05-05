@@ -19,6 +19,7 @@ const protect = async (req, res, next) => {
         id: decoded.id,
         role: decoded.role,
       };
+      console.log("User:", req.user);
       next();
     } catch (err) {
       console.error('Auth error:', err.message);

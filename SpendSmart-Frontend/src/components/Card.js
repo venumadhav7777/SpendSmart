@@ -8,7 +8,7 @@ const Card = ({ title, value, icon, color, trend, subtitle, children }) => {
   return (
     <motion.div
       whileHover={{ y: -5 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.7, ease: 'easeOut' }}
     >
       <MuiCard
         sx={{

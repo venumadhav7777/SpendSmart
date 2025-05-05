@@ -13,9 +13,10 @@ import {
   Paper,
   Chip,
   IconButton,
-  Tooltip,
+  Tooltip as MuiTooltip,
   TableSortLabel,
-  Alert
+  Alert,
+  TablePagination
 } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
@@ -24,8 +25,9 @@ import {
   Info as InfoIcon,
   Refresh as RefreshIcon
 } from '@mui/icons-material';
-import { fetchTransactionsFromDB, refreshTransactions } from '../api';
+import { fetchTransactionsFromDB, refreshTransactions, fetchTransactions, createPublicToken, exchangePublicToken } from '../api';
 import SectionCard from '../components/SectionCard';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 function Transactions() {
   const [transactions, setTransactions] = useState([]);
@@ -33,15 +35,54 @@ function Transactions() {
   const [error, setError] = useState('');
   const [orderBy, setOrderBy] = useState('date');
   const [order, setOrder] = useState('desc');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const handleFetchTransactions = async () => {
+    try {
+      console.log("Fetching transactions from Plaid");
+      // Get current date
+      const endDate = new Date();
+      const startDate = "2023-01-01";
+      
+      // Format dates to YYYY-MM-DD
+      const formatDate = (date) => {
+        return date.toISOString().split('T')[0];
+      };
+
+      console.log("startDate", startDate, "endDate", formatDate(endDate));
+
+      const response = await fetchTransactions(
+        startDate,
+        formatDate(endDate)
+      );
+      // console.log("Response", response);
+      
+      if (response.data && response.data.transactions) {
+        setTransactions(response.data.transactions);
+      } else {
+        setTransactions([]);
+      }
+    } catch (err) {
+      setError('Failed to fetch transactions from Plaid.');
+      throw err;
+    }
+  };
 
   const loadTransactions = async () => {
     setLoading(true);
     setError('');
     try {
       const response = await fetchTransactionsFromDB();
-      setTransactions(response.data.transactions || []);
+      if (response.data.transactions && response.data.transactions.length > 0) {
+        setTransactions(response.data.transactions);
+      } else {
+        // If no transactions in DB, fetch from Plaid
+        console.log("No transactions in DB, fetching from Plaid");
+        await handleFetchTransactions();
+      }
     } catch (err) {
-      setError('Failed to fetch transactions from database.');
+      setError('Failed to fetch transactions.');
     } finally {
       setLoading(false);
     }
@@ -53,10 +94,11 @@ function Transactions() {
     try {
       // First refresh from Plaid
       await refreshTransactions();
-      // Then fetch updated transactions from database
-      await loadTransactions();
+      // Then fetch directly from Plaid
+      await handleFetchTransactions();
     } catch (err) {
       setError('Failed to refresh transactions.');
+    } finally {
       setLoading(false);
     }
   };
@@ -103,6 +145,40 @@ function Transactions() {
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const processTransactions = (transactions) => {
+    const categories = {};
+    transactions.forEach((tx) => {
+      const category = tx.category || tx.name;
+      if (!categories[category]) {
+        categories[category] = { total: 0, color: getRandomColor() };
+      }
+      categories[category].total += Math.abs(tx.amount);
+    });
+    return Object.entries(categories).map(([category, data]) => ({
+      category,
+      total: data.total,
+      color: data.color
+    }));
+  };
+
+  const getRandomColor = () => {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
   };
 
   return (
@@ -155,11 +231,10 @@ function Transactions() {
                   </TableSortLabel>
                 </TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>Location</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortedTransactions.map((tx) => (
+              {sortedTransactions.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((tx) => (
                 <TableRow
                   key={tx.transaction_id}
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
@@ -169,22 +244,44 @@ function Transactions() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {tx.name}
                       {tx.merchant_name && (
-                        <Tooltip title="Merchant">
+                        <MuiTooltip title="Merchant">
                           <InfoIcon fontSize="small" color="action" />
-                        </Tooltip>
+                        </MuiTooltip>
                       )}
                     </Box>
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                      {tx.category?.map((cat, index) => (
-                        <Chip
-                          key={index}
-                          label={cat}
-                          size="small"
-                          variant="outlined"
-                        />
-                      ))}
+                      {tx.mapped_category ? (
+                        <>
+                          <Chip
+                            label={tx.mapped_category.primary
+                              .replace(/_/g, ' ')
+                              .toLowerCase()
+                              .replace(/\b\w/g, c => c.toUpperCase())}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            sx={{ maxWidth: 120, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}
+                          />
+                          <Chip
+                            label={tx.mapped_category.description}
+                            size="small"
+                            variant="outlined"
+                            sx={{ maxWidth: 180, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}
+                          />
+                        </>
+                      ) : (
+                        tx.category?.map((cat, index) => (
+                          <Chip
+                            key={index}
+                            label={cat}
+                            size="small"
+                            variant="outlined"
+                            sx={{ maxWidth: 120, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}
+                          />
+                        ))
+                      )}
                     </Box>
                   </TableCell>
                   <TableCell>
@@ -209,19 +306,19 @@ function Transactions() {
                       size="small"
                     />
                   </TableCell>
-                  <TableCell>
-                    {tx.location?.city && (
-                      <Tooltip title={`${tx.location.city}, ${tx.location.region}`}>
-                        <IconButton size="small">
-                          <LocationIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          <TablePagination
+            component="div"
+            count={sortedTransactions.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5, 10, 25, 50, 100]}
+          />
         </TableContainer>
       </SectionCard>
     </Box>

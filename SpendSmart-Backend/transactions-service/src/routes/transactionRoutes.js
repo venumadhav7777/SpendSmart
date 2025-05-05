@@ -7,7 +7,8 @@ const {
     getTransactions,
     syncTransactions,
     refreshTransactions,
-    getTransactionsFromDB
+    getTransactionsFromDB,
+    getBalance
 } = require('../controllers/transactionController');
 const { protect } = require('../middlewares/authMiddleware');
 
@@ -18,5 +19,6 @@ router.post('/get', getTransactions);
 router.post('/sync', syncTransactions);
 router.post('/refresh', refreshTransactions);
 router.get('/db', getTransactionsFromDB);
+router.get('/balance', getBalance);
 
 module.exports = router;

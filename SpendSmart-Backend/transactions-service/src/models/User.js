@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema({
   plaidPublicToken: { type: String },
   plaidAccessToken: { type: String, select: false },
   itemId: { type: String },
+  balance: { type: Number, default: 0 },
   transactionsCursor: { type: String, default: null },
 }, { timestamps: true });
 

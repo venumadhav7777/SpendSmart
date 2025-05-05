@@ -59,7 +59,7 @@ services:
     networks:
       - spendsmart-net
     # volumes:
-    #   - ./budget-savings-service:/app
+    #   - ./budget-savings-service:/app/
   
   api-gateway:
     build: ./api-gateway
