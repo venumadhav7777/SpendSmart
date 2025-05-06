@@ -59,7 +59,7 @@ services:
     networks:
       - spendsmart-net
     # volumes:
-    #   - ./budget-savings-service:/app
+    #   - ./budget-savings-service:/app/
   
   api-gateway:
     build: ./api-gateway
@@ -98,8 +98,8 @@ services:
       - OLLAMA_HOST=http://ai-llm:11434
     networks:
       - spendsmart-net
-    volumes:
-      - ./ai-advisor-service:/app
+    # volumes:
+      # - ./ai-advisor-service:/app
 
   ai-llm:
     image: ollama/ollama:latest

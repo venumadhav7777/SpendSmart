@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+const API_BASE_URL = 'http://localhost:9090';
 const api = axios.create({
   baseURL: 'http://localhost:9090',
   headers: {
@@ -63,7 +64,7 @@ export const fetchBudgets = () => {
 };
 
 export const createBudget = (budgetData) => {
-  return api.post('/api/budgets', budgetData);
+  return api.post('/api/budgets/', budgetData);
 };
 
 export const fetchSavings = () => {
@@ -71,7 +72,7 @@ export const fetchSavings = () => {
 };
 
 export const createSavings = (savingsData) => {
-  return api.post('/api/savings', savingsData);
+  return api.post('/api/savings/', savingsData);
 };
 
 export const fetchTransactions = (startDate, endDate) => {
@@ -96,4 +97,23 @@ export const createPublicToken = () => {
 
 export const exchangePublicToken = () => {
   return api.post('/api/transactions/exchange_token', {});
+};
+
+export const fetchTransactionsFromDB = async () => {
+  return api.get(`/api/transactions/db`);
+};
+
+export const getBalance = async () => {
+  return api.get('/api/transactions/balance');
+};
+
+export const chatWithAI = async (messages) => {
+  return fetch(`${API_BASE_URL}/api/ai-advisor/chat/stream`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
+    },
+    body: JSON.stringify({ messages })
+  });
 };

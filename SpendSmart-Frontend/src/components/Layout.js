@@ -15,6 +15,8 @@ import {
   Badge,
   useTheme,
   useMediaQuery,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -26,13 +28,16 @@ import {
   Notifications as NotificationsIcon,
   Settings as SettingsIcon,
   ChevronLeft as ChevronLeftIcon,
+  Person as PersonIcon,
+  Logout as LogoutIcon,
 } from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const drawerWidth = 240;
 
 const menuItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+  { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Transactions', icon: <TransactionsIcon />, path: '/transactions' },
   { text: 'Budgets', icon: <SavingsIcon />, path: '/budgets' },
   { text: 'Savings', icon: <SavingsIcon />, path: '/savings' },
@@ -40,15 +45,41 @@ const menuItems = [
   { text: 'AI Advisor', icon: <AIAdvisorIcon />, path: '/ai-advisor' },
 ];
 
-const Layout = ({ children }) => {
+const Layout = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
+  };
+
+  const handleProfileMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleProfileMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleProfileClick = () => {
+    handleProfileMenuClose();
+    navigate('/profile');
+  };
+
+  const handleSettingsClick = () => {
+    handleProfileMenuClose();
+    navigate('/settings');
+  };
+
+  const handleLogoutClick = () => {
+    handleProfileMenuClose();
+    logout();
+    navigate('/login');
   };
 
   const drawer = (
@@ -130,16 +161,79 @@ const Layout = ({ children }) => {
                 <NotificationsIcon />
               </Badge>
             </IconButton>
-            <Avatar
+            <IconButton
+              onClick={handleProfileMenuOpen}
               sx={{
-                width: 40,
-                height: 40,
-                cursor: 'pointer',
-                backgroundColor: 'primary.main',
+                padding: 0,
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                },
               }}
             >
-              U
-            </Avatar>
+              <Avatar
+                sx={{
+                  width: 40,
+                  height: 40,
+                  cursor: 'pointer',
+                  backgroundColor: 'primary.main',
+                }}
+              >
+                U
+              </Avatar>
+            </IconButton>
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleProfileMenuClose}
+              PaperProps={{
+                elevation: 0,
+                sx: {
+                  overflow: 'visible',
+                  filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.15))',
+                  mt: 1.5,
+                  '& .MuiAvatar-root': {
+                    width: 32,
+                    height: 32,
+                    ml: -0.5,
+                    mr: 1,
+                  },
+                  '&:before': {
+                    content: '""',
+                    display: 'block',
+                    position: 'absolute',
+                    top: 0,
+                    right: 14,
+                    width: 10,
+                    height: 10,
+                    bgcolor: 'background.paper',
+                    transform: 'translateY(-50%) rotate(45deg)',
+                    zIndex: 0,
+                  },
+                },
+              }}
+              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            >
+              <MenuItem onClick={handleProfileClick}>
+                <ListItemIcon>
+                  <PersonIcon fontSize="small" />
+                </ListItemIcon>
+                Profile
+              </MenuItem>
+              <MenuItem onClick={handleSettingsClick}>
+                <ListItemIcon>
+                  <SettingsIcon fontSize="small" />
+                </ListItemIcon>
+                Settings
+              </MenuItem>
+              <Divider />
+              <MenuItem onClick={handleLogoutClick}>
+                <ListItemIcon>
+                  <LogoutIcon fontSize="small" />
+                </ListItemIcon>
+                Logout
+              </MenuItem>
+            </Menu>
           </Box>
         </Toolbar>
       </AppBar>
@@ -175,7 +269,7 @@ const Layout = ({ children }) => {
           mt: '64px',
         }}
       >
-        {children}
+        <Outlet />
       </Box>
     </Box>
   );

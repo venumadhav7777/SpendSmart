@@ -9,12 +9,14 @@ import PersonIcon from '@mui/icons-material/Person';
 import AssistantIcon from '@mui/icons-material/SmartToy';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import { useAuth } from '../contexts/AuthContext';
 
 const drawerWidth = 240;
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
@@ -28,7 +30,7 @@ const Sidebar = () => {
   ];
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    logout();
     navigate('/login');
   };
 

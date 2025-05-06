@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Typography, Box, TextField, Button, Alert, Link } from '@mui/material';
-import { register } from '../api';
+import { register, createPublicToken, exchangePublicToken, fetchTransactions } from '../api';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import SectionCard from '../components/SectionCard';
 
 function Register() {
@@ -11,21 +12,43 @@ function Register() {
   const [error, setError] = useState('');
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
+  const { login: authLogin } = useAuth();
 
   const handleRegister = async () => {
     setError('');
     setErrors({});
     try {
       const response = await register(name, email, password);
-      if (response.data.success) {
-        navigate('/login');
+      // Backend returns user data and token directly
+      const { _id, name: userName, email: userEmail, role, token } = response.data;
+
+      // Store user data and token in AuthContext
+      authLogin({ _id, name: userName, email: userEmail, role }, token);
+
+      // Create and exchange public token after successful registration
+      try {
+        await createPublicToken();
+        await exchangePublicToken();
+
+        const endDate = new Date();
+        const startDate = "2023-01-01";
+
+        // Format dates to YYYY-MM-DD
+        const formatDate = (date) => {
+          return date.toISOString().split('T')[0];
+        };
+
+        await fetchTransactions(startDate, formatDate(endDate));
+      } catch (tokenError) {
+        console.error('Error with token creation/exchange:', tokenError);
+        // Continue with navigation even if token creation fails
       }
+
+      navigate('/dashboard');
     } catch (err) {
-      if (err.response?.data?.message === 'User already exists') {
+      if (err.response?.data?.message === 'Email already registered') {
         setError('An account with this email already exists. Please login or use a different email.');
         setErrors({ email: 'Email already registered' });
-      } else if (err.response?.data?.errors) {
-        setErrors(err.response.data.errors);
       } else if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
@@ -75,11 +98,11 @@ function Register() {
         <Box sx={{ mt: 2, textAlign: 'center' }}>
           <Typography variant="body2">
             Already have an account?{' '}
-            <Link 
-              component="button" 
-              variant="body2" 
+            <Link
+              component="button"
+              variant="body2"
               onClick={() => navigate('/login')}
-              sx={{ 
+              sx={{
                 color: 'primary.main',
                 textDecoration: 'none',
                 '&:hover': {

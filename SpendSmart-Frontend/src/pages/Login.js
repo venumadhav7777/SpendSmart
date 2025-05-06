@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Typography, Box, TextField, Button, Alert, Link } from '@mui/material';
-import { login } from '../api';
-import { useNavigate } from 'react-router-dom';
+import { login, createPublicToken, exchangePublicToken } from '../api';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import SectionCard from '../components/SectionCard';
 
 function Login() {
@@ -10,20 +11,36 @@ function Login() {
   const [error, setError] = useState('');
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login: authLogin } = useAuth();
+
+  // Get the redirect path from location state, or default to dashboard
+  const from = location.state?.from?.pathname || '/dashboard';
 
   const handleLogin = async () => {
     setError('');
     setErrors({});
     try {
       const response = await login(email, password);
-      if (response.data.success) {
-        localStorage.setItem('token', response.data.token);
-        navigate('/dashboard');
+      // Backend returns user data and token directly
+      const { _id, name, email: userEmail, role, token } = response.data;
+      
+      // Store user data and token in AuthContext
+      authLogin({ _id, name, email: userEmail, role }, token);
+      
+      // Create and exchange public token after successful login
+      try {
+        await createPublicToken();
+        await exchangePublicToken();
+      } catch (tokenError) {
+        console.error('Error with token creation/exchange:', tokenError);
+        // Continue with navigation even if token creation fails
       }
+      
+      // Navigate to the page they were trying to access, or dashboard
+      navigate(from, { replace: true });
     } catch (err) {
-      if (err.response?.data?.errors) {
-        setErrors(err.response.data.errors);
-      } else if (err.response?.data?.message) {
+      if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
         setError('Failed to login. Please try again.');
