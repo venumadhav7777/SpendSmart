@@ -193,7 +193,7 @@ function Dashboard() {
         <Paper sx={{ p: 2, background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)' }}>
           <Typography variant="subtitle2">{label}</Typography>
           <Typography variant="body2" color="primary">
-            ${payload[0].value.toFixed(2)}
+            ₹{payload[0].value.toFixed(2)}
           </Typography>
         </Paper>
       );
@@ -202,9 +202,9 @@ function Dashboard() {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'INR'
     }).format(amount);
   };
 
@@ -347,10 +347,10 @@ function Dashboard() {
         <Paper sx={{ p: 2 }}>
           <Typography variant="subtitle2">{label}</Typography>
           <Typography variant="body2" color="success.main">
-            Income: ${income.toFixed(2)}
+            Income: ₹{income.toFixed(2)}
           </Typography>
           <Typography variant="body2" color="error.main">
-            Expenses: ${expenses.toFixed(2)}
+            Expenses: ₹{expenses.toFixed(2)}
           </Typography>
         </Paper>
       );
@@ -474,7 +474,7 @@ function Dashboard() {
                                   {data.category}
                                 </Typography>
                                 <Typography variant="body2" sx={{ mt: 0.5 }}>
-                                  Amount: ${data.total.toFixed(2)}
+                                  Amount: ₹{data.total.toFixed(2)}
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                   {percent}% of total spending

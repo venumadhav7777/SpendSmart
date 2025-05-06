@@ -82,10 +82,13 @@ exports.updateGoal = async (req, res) => {
 
         // 3) send congrats if reached
         if (goal.saved >= goal.target) {
+            console.log('Goal reached!');
+            console.log('Sending email...');
             await sendMail({
                 to: email,
                 subject: `Goal Reached: ${goal.name}`,
-                text: `🎉 You’ve reached your savings goal "${goal.name}"!`
+                text: `🎉 You’ve reached your savings goal "${goal.name}"!`,
+                html: `<h1>🎉 You’ve reached your savings goal "${goal.name}"!</h1>`
             });
         }
 

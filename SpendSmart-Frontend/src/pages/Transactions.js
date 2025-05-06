@@ -18,6 +18,7 @@ import {
   Alert,
   TablePagination
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
@@ -30,6 +31,7 @@ import SectionCard from '../components/SectionCard';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 function Transactions() {
+  const theme = useTheme();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -144,9 +146,9 @@ function Transactions() {
   }, []);
 
   const formatAmount = (amount) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'INR'
     }).format(amount);
   };
 
@@ -296,48 +298,98 @@ function Transactions() {
                     </Box>
                   </TableCell>
                   <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      {(tx.mapped_category?.primary === 'INCOME' || tx.mapped_category?.primary === 'TRANSFER_IN') ? (
-                        <>
-                          <TrendingUpIcon style={{ color: '#4CAF50' }} fontSize="small" />
-                          <Typography style={{ color: '#4CAF50', fontWeight: 500 }}>
-                            {formatAmount(Math.abs(tx.amount))}
-                          </Typography>
-                        </>
-                      ) : (
-                        <>
-                          <TrendingDownIcon style={{ color: '#F44336' }} fontSize="small" />
-                          <Typography style={{ color: '#F44336', fontWeight: 500 }}>
-                            {formatAmount(Math.abs(tx.amount))}
-                          </Typography>
-                        </>
-                      )}
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={tx.pending ? 'Pending' : 'Completed'}
-                      color={tx.pending ? 'warning' : 'success'}
-                      size="small"
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <TablePagination
-            component="div"
-            count={sortedTransactions.length}
-            page={page}
-            onPageChange={handleChangePage}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-            rowsPerPageOptions={[5, 10, 25, 50, 100]}
-          />
-        </TableContainer>
-      </SectionCard>
-    </Box>
-  );
-}
+                  <Box sx={{ display: 'flex', alignItems<thinking>
+In Transactions.js, there are hardcoded colors for icons and typography such as '#4CAF50' and '#F44336' which may not adapt well to dark mode.
 
-export default Transactions;
+I will update these colors to use theme.palette.success.main and theme.palette.error.main respectively.
+
+I will import useTheme from '@mui/material/styles' and use it in the component.
+
+I will proceed to edit Transactions.js accordingly.
+</thinking>
+
+<edit_file>
+<path>SpendSmart-Frontend/src/pages/Transactions.js</path>
+<content>
+<<<<<<< SEARCH
+import React, { useEffect, useState } from 'react';
+import {
+  Typography,
+  Box,
+  Button,
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  IconButton,
+  Tooltip as MuiTooltip,
+  TableSortLabel,
+  Alert,
+  TablePagination
+} from '@mui/material';
+import {
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  LocationOn as LocationIcon,
+  Info as InfoIcon,
+  Refresh as RefreshIcon
+} from '@mui/icons-material';
+import { fetchTransactionsFromDB, refreshTransactions, fetchTransactions, createPublicToken, exchangePublicToken, syncTransactions } from '../api';
+import SectionCard from '../components/SectionCard';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+
+function Transactions() {
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [orderBy, setOrderBy] = useState('date');
+  const [order, setOrder] = useState('desc');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+=======
+import React, { useEffect, useState } from 'react';
+import { useTheme } from '@mui/material/styles';
+import {
+  Typography,
+  Box,
+  Button,
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  IconButton,
+  Tooltip as MuiTooltip,
+  TableSortLabel,
+  Alert,
+  TablePagination
+} from '@mui/material';
+import {
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  LocationOn as LocationIcon,
+  Info as InfoIcon,
+  Refresh as RefreshIcon
+} from '@mui/icons-material';
+import { fetchTransactionsFromDB, refreshTransactions, fetchTransactions, createPublicToken, exchangePublicToken, syncTransactions } from '../api';
+import SectionCard from '../components/SectionCard';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+
+function Transactions() {
+  const theme = useTheme();
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [orderBy, setOrderBy] = useState('date');
+  const [order, setOrder] = useState('desc');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);

@@ -177,7 +177,7 @@ const Reports = () => {
   }));
 
   // Helper for formatting
-  const formatCurrency = (amount) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  const formatCurrency = (amount) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
   const formatPercentage = (value) => `${value.toFixed(1)}%`;
 
   return (
@@ -193,7 +193,6 @@ const Reports = () => {
               value={formatCurrency(balance)}
               icon={<AccountBalanceIcon />}
               color="#2196F3"
-              // trend={{ value: 0, label: '' }}
             />
           </motion.div>
         </Grid>
@@ -260,10 +259,10 @@ const Reports = () => {
                                 {label}
                               </Typography>
                               <Typography variant="body2" sx={{ mt: 0.5, color: '#4CAF50' }}>
-                                Income: ${income.toFixed(2)}
+                                Income: ₹{income.toFixed(2)}
                               </Typography>
                               <Typography variant="body2" sx={{ color: '#F44336' }}>
-                                Expenses: ${expenses.toFixed(2)}
+                                Expenses: ₹{expenses.toFixed(2)}
                               </Typography>
                             </Box>
                           );
@@ -320,7 +319,7 @@ const Reports = () => {
                                 {data.name}
                               </Typography>
                               <Typography variant="body2" sx={{ mt: 0.5 }}>
-                                Amount: ${data.value.toFixed(2)}
+                                Amount: ₹{data.value.toFixed(2)}
                               </Typography>
                               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                 {percent}% of total spending
@@ -391,4 +390,4 @@ const Reports = () => {
   );
 };
 
-export default Reports; 
+export default Reports;

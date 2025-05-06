@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Typography, Box, Button, TextField, CircularProgress, MenuItem, Alert, LinearProgress, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, IconButton, Tooltip } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { exportBudgetsToPDF } from '../utils/pdfExport';
 import { fetchBudgets, createBudget, updateBudget, deleteBudget } from '../api';
 import SectionCard from '../components/SectionCard';
 import { CheckCircle as CheckCircleIcon, Warning as WarningIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
 function Budgets() {
+  const theme = useTheme();
   const [budgets, setBudgets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -51,9 +53,9 @@ function Budgets() {
 
   const getBudgetStatus = (budget) => {
     const percentage = (budget.spent / budget.limit) * 100;
-    if (percentage >= 100) return { color: '#F44336', icon: <WarningIcon /> };
-    if (percentage >= 80) return { color: '#FFA726', icon: <WarningIcon /> };
-    return { color: '#4CAF50', icon: <CheckCircleIcon /> };
+    if (percentage >= 100) return { color: theme.palette.error.main, icon: <WarningIcon color="error" /> };
+    if (percentage >= 80) return { color: theme.palette.warning.main, icon: <WarningIcon color="warning" /> };
+    return { color: theme.palette.success.main, icon: <CheckCircleIcon color="success" /> };
   };
 
   const loadBudgets = async () => {
@@ -154,6 +156,17 @@ function Budgets() {
     }
   };
 
+  const formatCurrency = (amount) => {
+    if (typeof amount !== 'number') {
+      amount = parseFloat(amount);
+      if (isNaN(amount)) amount = 0;
+    }
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR'
+    }).format(amount);
+  };
+
   return (
     <Box>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#4a90e2' }}>
@@ -193,7 +206,7 @@ function Budgets() {
             sx={{ flex: '1 1 150px' }}
             required
             InputProps={{
-              startAdornment: '$'
+              startAdornment: '₹'
             }}
           />
           <TextField
@@ -257,7 +270,7 @@ function Budgets() {
                         onChange={(e) => handleEditChange('limit', e.target.value)}
                         sx={{ mr: 1, width: 100 }}
                         InputProps={{
-                          startAdornment: '$'
+                          startAdornment: '₹'
                         }}
                       />
                       <TextField
@@ -284,41 +297,41 @@ function Budgets() {
                     <>
                       <Typography variant="body1">{budget.name}</Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-<Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-  ${Math.round(budget.spent * 100) / 100} / ${budget.limit}
-</Typography>
-                        {status.icon}
-                        <Tooltip title="Edit">
-                          <IconButton size="small" onClick={() => startEditing(budget)} sx={{ ml: 2 }}>
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete">
-                          <IconButton size="small" color="error" onClick={() => openDeleteDialog(budget)} sx={{ ml: 1 }}>
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </>
-                  )}
-                </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={Math.min((budget.spent / budget.limit) * 100, 100)}
-                  sx={{
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: 'grey.200',
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor: status.color,
-                      borderRadius: 4
-                    }
-                  }}
-                />
+                      <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+                        {formatCurrency(budget.spent)} / {formatCurrency(budget.limit)}
+                      </Typography>
+                      {status.icon}
+                      <Tooltip title="Edit">
+                        <IconButton size="small" onClick={() => startEditing(budget)} sx={{ ml: 2 }}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete">
+                        <IconButton size="small" color="error" onClick={() => openDeleteDialog(budget)} sx={{ ml: 1 }}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </>
+                )}
               </Box>
-            );
-          })}
-        </Box>
+              <LinearProgress
+                variant="determinate"
+                value={Math.min((budget.spent / budget.limit) * 100, 100)}
+                sx={{
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: theme.palette.background.paper,
+                  '& .MuiLinearProgress-bar': {
+                    backgroundColor: status.color,
+                    borderRadius: 4
+                  }
+                }}
+              />
+            </Box>
+          );
+        })}
+      </Box>
       </SectionCard>
 
       <Dialog

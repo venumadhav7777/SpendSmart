@@ -74,7 +74,7 @@ exports.getTransactions = async (req, res) => {
         return sum + (account.balances.available || 0);
       }, 0);
       console.log("totalBalance: ", totalBalance);
-      user.balance = await convertUSDtoINR(totalBalance);
+      user.balance = totalBalance;
       await user.save();
     }
 
@@ -139,7 +139,7 @@ exports.syncTransactions = async (req, res) => {
       const totalBalance = data.accounts.reduce((sum, account) => {
         return sum + (account.balances.available || 0);
       }, 0);
-      user.balance = await convertUSDtoINR(totalBalance);
+      user.balance = totalBalance;
     }
 
     // save new cursor

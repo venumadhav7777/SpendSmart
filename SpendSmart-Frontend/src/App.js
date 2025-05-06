@@ -1,9 +1,8 @@
 import React from 'react';
-import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
-import theme from './theme';
+import { CustomThemeProvider } from './contexts/ThemeContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -50,12 +49,12 @@ function AppRoutes() {
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
+    <CustomThemeProvider>
       <CssBaseline />
       <Router>
         <AppRoutes />
       </Router>
-    </ThemeProvider>
+    </CustomThemeProvider>
   );
 }
 

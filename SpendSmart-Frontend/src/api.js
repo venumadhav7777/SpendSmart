@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:9090';
 const api = axios.create({
-  baseURL: 'http://localhost:9090',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -29,16 +29,12 @@ api.interceptors.response.use(
   (error) => {
     console.error('Response error:', error);
     if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
       console.error('Error response:', error.response.data);
       return Promise.reject(error);
     } else if (error.request) {
-      // The request was made but no response was received
       console.error('No response received:', error.request);
       return Promise.reject(new Error('No response from server'));
     } else {
-      // Something happened in setting up the request that triggered an Error
       console.error('Request setup error:', error.message);
       return Promise.reject(error);
     }
@@ -46,17 +42,19 @@ api.interceptors.response.use(
 );
 
 export const login = (email, password) => {
-  console.log('Attempting login for:', email);
   return api.post('/api/auth/login', { email, password });
 };
 
 export const register = (name, email, password) => {
-  console.log('Attempting registration for:', email);
   return api.post('/api/auth/register', { name, email, password });
 };
 
 export const fetchProfile = () => {
   return api.get('/api/users/profile');
+};
+
+export const updateProfile = (profileData) => {
+  return api.put('/api/users/profile', profileData);
 };
 
 export const fetchBudgets = () => {
@@ -83,6 +81,14 @@ export const createSavings = (savingsData) => {
   return api.post('/api/savings/', savingsData);
 };
 
+export const deleteSavings = (goalId) => {
+  return api.delete(`/api/savings/${goalId}`);
+};
+
+export const updateSavings = (goalId, updateData) => {
+  return api.put(`/api/savings/${goalId}`, updateData);
+};
+
 export const fetchTransactions = (startDate, endDate) => {
   return api.post('/api/transactions/get', { start_date: startDate, end_date: endDate });
 };
@@ -95,7 +101,6 @@ export const refreshTransactions = () => {
   return api.post('/api/transactions/refresh');
 };
 
-// Updated functions for public token creation and exchange token
 export const createPublicToken = () => {
   return api.post('/api/transactions/public_token', {
     institution_id: "ins_20",
