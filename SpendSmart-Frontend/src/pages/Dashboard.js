@@ -82,7 +82,7 @@ function Dashboard() {
 
       // Calculate monthly spending by category
       const spendingByCategory = {};
-      const monthlyData = {};
+      const monthlyDataMap = {};
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
       const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
@@ -99,13 +99,12 @@ function Dashboard() {
         const isCurrentMonth = txMonth === currentMonth && txYear === currentYear;
         const isLastMonth = txMonth === lastMonth && txYear === lastMonthYear;
 
-        // Handle income (positive amounts)
-        if (tx.amount > 0) {
-          if (isCurrentMonth) currentMonthIncome += tx.amount;
-          if (isLastMonth) lastMonthIncome += tx.amount;
-        } 
-        // Handle expenses (negative amounts)
-        else {
+        const primaryCategory = tx.mapped_category?.primary || 'OTHER';
+
+        if (primaryCategory === 'INCOME' || primaryCategory === 'TRANSFER_IN') {
+          if (isCurrentMonth) currentMonthIncome += Math.abs(tx.amount);
+          if (isLastMonth) lastMonthIncome += Math.abs(tx.amount);
+        } else {
           const expenseAmount = Math.abs(tx.amount);
           if (isCurrentMonth) currentMonthExpenses += expenseAmount;
           if (isLastMonth) lastMonthExpenses += expenseAmount;
@@ -113,18 +112,36 @@ function Dashboard() {
           // Categorize spending
           const category = tx.category?.[0] || 'Other';
           spendingByCategory[category] = (spendingByCategory[category] || 0) + expenseAmount;
-          
-          // Group by month for trend analysis
-          const month = txDate.toLocaleString('default', { month: 'short' });
-          monthlyData[month] = (monthlyData[month] || 0) + expenseAmount;
+        }
+
+        // Group by month for trend analysis
+        const monthKey = `${txYear}-${txMonth}`;
+        if (!monthlyDataMap[monthKey]) {
+          monthlyDataMap[monthKey] = { name: txDate.toLocaleString('default', { month: 'short' }), income: 0, expenses: 0 };
+        }
+        if (primaryCategory === 'INCOME' || primaryCategory === 'TRANSFER_IN') {
+          monthlyDataMap[monthKey].income += Math.abs(tx.amount);
+        } else {
+          monthlyDataMap[monthKey].expenses += Math.abs(tx.amount);
         }
       });
+
+      // Convert monthlyDataMap to array sorted by year-month
+      const monthlyData = Object.entries(monthlyDataMap)
+        .sort(([aKey], [bKey]) => aKey.localeCompare(bKey))
+        .map(([, value]) => value);
 
       // Calculate trends and rates
       const incomeTrend = lastMonthIncome ? ((currentMonthIncome - lastMonthIncome) / lastMonthIncome) * 100 : 0;
       const expensesTrend = lastMonthExpenses ? ((currentMonthExpenses - lastMonthExpenses) / lastMonthExpenses) * 100 : 0;
-      const savingsRate = currentMonthIncome ? ((currentMonthIncome - currentMonthExpenses) / currentMonthIncome) * 100 : 0;
-      const lastMonthSavingsRate = lastMonthIncome ? ((lastMonthIncome - lastMonthExpenses) / lastMonthIncome) * 100 : 0;
+
+      // Calculate savings rate from monthlyData for consistency
+      const now = new Date();
+      const currentMonthData = monthlyData.find(m => m.name === now.toLocaleString('default', { month: 'short' })) || { income: 0, expenses: 0 };
+      const lastMonthData = monthlyData[monthlyData.length - 2] || { income: 0, expenses: 0 };
+
+      const savingsRate = currentMonthData.income ? ((currentMonthData.income - currentMonthData.expenses) / currentMonthData.income) * 100 : 0;
+      const lastMonthSavingsRate = lastMonthData.income ? ((lastMonthData.income - lastMonthData.expenses) / lastMonthData.income) * 100 : 0;
       const savingsTrend = lastMonthSavingsRate ? ((savingsRate - lastMonthSavingsRate) / lastMonthSavingsRate) * 100 : 0;
 
       // Update summary data
@@ -235,14 +252,13 @@ function Dashboard() {
     // First pass: collect all categories and their totals
     transactions.forEach(tx => {
       const txDate = new Date(tx.date);
-      if (tx.amount > 0 && 
+      const primaryCategory = tx.mapped_category?.primary || 'OTHER';
+      if (primaryCategory !== 'INCOME' && primaryCategory !== 'TRANSFER_IN' &&
           txDate.getMonth() === currentMonth && 
-          txDate.getFullYear() === currentYear &&
-          tx.mapped_category?.primary !== 'INCOME' && 
-          !tx.mapped_category?.primary?.includes('TRANSFER')) {
-        const originalCategory = tx.mapped_category?.primary || 'OTHER';
+          txDate.getFullYear() === currentYear) {
+        const originalCategory = primaryCategory;
         const simplifiedCategory = simplifyCategory(originalCategory);
-        const amount = tx.amount;
+        const amount = Math.abs(tx.amount);
         
         categoryTotals[simplifiedCategory] = (categoryTotals[simplifiedCategory] || 0) + amount;
         categoryCounts[simplifiedCategory] = (categoryCounts[simplifiedCategory] || 0) + 1;
@@ -311,8 +327,9 @@ function Dashboard() {
       const txMonth = txDate.getMonth();
       const idx = months.findIndex(m => m.year === txYear && m.month === txMonth);
       if (idx !== -1) {
-        if (tx.amount > 0) {
-          data[idx].income += tx.amount;
+        const primaryCategory = tx.mapped_category?.primary || 'OTHER';
+        if (primaryCategory === 'INCOME' || primaryCategory === 'TRANSFER_IN') {
+          data[idx].income += Math.abs(tx.amount);
         } else {
           data[idx].expenses += Math.abs(tx.amount);
         }

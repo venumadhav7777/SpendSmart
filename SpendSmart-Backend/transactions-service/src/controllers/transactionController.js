@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const client = require('../utils/plaidUtils');
 const { mapPlaidCategory, debugCategoryMapping } = require('../utils/categoryUtils');
+const { convertUSDtoINR } = require('../utils/currencyConverter');
 const mongoose = require('mongoose');
 
 // 1. Sandbox: create a public_token
@@ -73,23 +74,26 @@ exports.getTransactions = async (req, res) => {
         return sum + (account.balances.available || 0);
       }, 0);
       console.log("totalBalance: ", totalBalance);
-      user.balance = totalBalance;
+      user.balance = await convertUSDtoINR(totalBalance);
       await user.save();
     }
 
     // Process and map categories for each transaction
-    const processedTransactions = data.transactions.map(txn => {
+    const processedTransactions = await Promise.all(data.transactions.map(async txn => {
       // Debug the category mapping
       console.log('Processing transaction:', txn.name);
       const mappedCategory = debugCategoryMapping(txn.personal_finance_category);
+      // Convert amount from USD to INR
+      const convertedAmount = await convertUSDtoINR(txn.amount);
       
       return {
         ...txn,
+        amount: convertedAmount,
         mapped_category: mappedCategory,
         category: txn.category || [], // Keep original Plaid categories
         personal_finance_category: txn.personal_finance_category // Keep original PFC
       };
-    });
+    }));
 
     // upsert into DB
     const ops = processedTransactions.map(txn => ({
@@ -135,7 +139,7 @@ exports.syncTransactions = async (req, res) => {
       const totalBalance = data.accounts.reduce((sum, account) => {
         return sum + (account.balances.available || 0);
       }, 0);
-      user.balance = totalBalance;
+      user.balance = await convertUSDtoINR(totalBalance);
     }
 
     // save new cursor
@@ -143,18 +147,21 @@ exports.syncTransactions = async (req, res) => {
     await user.save();
 
     // Process and map categories for added transactions
-    const processedAddedTransactions = data.added.map(txn => {
+    const processedAddedTransactions = await Promise.all(data.added.map(async txn => {
       // Debug the category mapping
       console.log('Processing transaction:', txn.name);
       const mappedCategory = debugCategoryMapping(txn.personal_finance_category);
+      // Convert amount from USD to INR
+      const convertedAmount = await convertUSDtoINR(txn.amount);
       
       return {
         ...txn,
+        amount: convertedAmount,
         mapped_category: mappedCategory,
         category: txn.category || [],
         personal_finance_category: txn.personal_finance_category
       };
-    });
+    }));
 
     // upsert added transactions
     const ops = processedAddedTransactions.map(txn => ({
@@ -178,16 +185,19 @@ exports.syncTransactions = async (req, res) => {
 
     // upsert modified transactions
     if (data.modified.length) {
-      const processedModifiedTransactions = data.modified.map(txn => {
+      const processedModifiedTransactions = await Promise.all(data.modified.map(async txn => {
         console.log('Processing modified transaction:', txn.name);
         const mappedCategory = debugCategoryMapping(txn.personal_finance_category);
+        // Convert amount from USD to INR
+        const convertedAmount = await convertUSDtoINR(txn.amount);
         return {
           ...txn,
+          amount: convertedAmount,
           mapped_category: mappedCategory,
           category: txn.category || [],
           personal_finance_category: txn.personal_finance_category
         };
-      });
+      }));
 
       const modifiedOps = processedModifiedTransactions.map(txn => ({
         updateOne: {

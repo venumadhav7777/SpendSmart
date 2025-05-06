@@ -67,6 +67,14 @@ export const createBudget = (budgetData) => {
   return api.post('/api/budgets/', budgetData);
 };
 
+export const updateBudget = (budgetId, budgetData) => {
+  return api.put(`/api/budgets/${budgetId}`, budgetData);
+};
+
+export const deleteBudget = (budgetId) => {
+  return api.delete(`/api/budgets/${budgetId}`);
+};
+
 export const fetchSavings = () => {
   return api.get('/api/savings/');
 };

@@ -65,19 +65,20 @@ const Reports = () => {
   const monthlyData = (() => {
     const months = getLast6Months();
     const data = months.map(m => ({ name: m.label, income: 0, expenses: 0 }));
-    transactions.forEach(tx => {
-      const txDate = new Date(tx.date);
-      const txYear = txDate.getFullYear();
-      const txMonth = txDate.getMonth();
-      const idx = months.findIndex(m => m.year === txYear && m.month === txMonth);
-      if (idx !== -1) {
-        if (tx.amount > 0) {
-          data[idx].income += tx.amount;
-        } else {
-          data[idx].expenses += Math.abs(tx.amount);
-        }
+  transactions.forEach(tx => {
+    const txDate = new Date(tx.date);
+    const txYear = txDate.getFullYear();
+    const txMonth = txDate.getMonth();
+    const idx = months.findIndex(m => m.year === txYear && m.month === txMonth);
+    if (idx !== -1) {
+      const primaryCategory = tx.mapped_category?.primary || 'OTHER';
+      if (primaryCategory === 'INCOME' || primaryCategory === 'TRANSFER_IN') {
+        data[idx].income += Math.abs(tx.amount);
+      } else {
+        data[idx].expenses += Math.abs(tx.amount);
       }
-    });
+    }
+  });
     return data;
   })();
 
@@ -106,8 +107,16 @@ const Reports = () => {
     }
   });
 
-  const savingsRate = currentIncome ? ((currentIncome - currentExpenses) / currentIncome) * 100 : 0;
-  const lastMonthSavingsRate = lastMonthIncome ? ((lastMonthIncome - lastMonthExpenses) / lastMonthIncome) * 100 : 0;
+  // Calculate savings rate from monthlyData for consistency
+  const currentMonthData = monthlyData.find(m => {
+    const now = new Date();
+    return m.name === now.toLocaleString('default', { month: 'short' });
+  }) || { income: 0, expenses: 0 };
+
+  const lastMonthData = monthlyData[monthlyData.length - 2] || { income: 0, expenses: 0 };
+
+  const savingsRate = currentMonthData.income ? ((currentMonthData.income - currentMonthData.expenses) / currentMonthData.income) * 100 : 0;
+  const lastMonthSavingsRate = lastMonthData.income ? ((lastMonthData.income - lastMonthData.expenses) / lastMonthData.income) * 100 : 0;
   const savingsTrend = lastMonthSavingsRate ? ((savingsRate - lastMonthSavingsRate) / lastMonthSavingsRate) * 100 : 0;
 
   // Compute trends for cards
@@ -148,14 +157,14 @@ const Reports = () => {
   let totalSpending = 0;
   transactions.forEach(tx => {
     const txDate = new Date(tx.date);
-    if (tx.amount > 0 && 
+    const primaryCategory = tx.mapped_category?.primary || 'OTHER';
+    if (primaryCategory !== 'INCOME' && primaryCategory !== 'TRANSFER_IN' &&
         txDate.getMonth() === currentMonth && 
-        txDate.getFullYear() === currentYear &&
-        tx.mapped_category?.primary !== 'INCOME' && 
-        !tx.mapped_category?.primary?.includes('TRANSFER')) {
-      const originalCategory = tx.mapped_category?.primary || 'OTHER';
+        txDate.getFullYear() === currentYear) {
+      const originalCategory = primaryCategory;
       const simplifiedCategory = simplifyCategory(originalCategory);
-      const amount = tx.amount;
+      const amount = Math.abs(tx.amount);
+      
       categoryTotals[simplifiedCategory] = (categoryTotals[simplifiedCategory] || 0) + amount;
       totalSpending += amount;
     }
@@ -184,7 +193,7 @@ const Reports = () => {
               value={formatCurrency(balance)}
               icon={<AccountBalanceIcon />}
               color="#2196F3"
-              trend={{ value: 0, label: '' }}
+              // trend={{ value: 0, label: '' }}
             />
           </motion.div>
         </Grid>

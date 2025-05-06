@@ -296,18 +296,22 @@ function Transactions() {
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      {tx.amount < 0 ? (
-                        <TrendingDownIcon color="error" fontSize="small" />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {(tx.mapped_category?.primary === 'INCOME' || tx.mapped_category?.primary === 'TRANSFER_IN') ? (
+                        <>
+                          <TrendingUpIcon style={{ color: '#4CAF50' }} fontSize="small" />
+                          <Typography style={{ color: '#4CAF50', fontWeight: 500 }}>
+                            {formatAmount(Math.abs(tx.amount))}
+                          </Typography>
+                        </>
                       ) : (
-                        <TrendingUpIcon color="success" fontSize="small" />
+                        <>
+                          <TrendingDownIcon style={{ color: '#F44336' }} fontSize="small" />
+                          <Typography style={{ color: '#F44336', fontWeight: 500 }}>
+                            {formatAmount(Math.abs(tx.amount))}
+                          </Typography>
+                        </>
                       )}
-                      <Typography
-                        color={tx.amount < 0 ? 'error' : 'success'}
-                        sx={{ fontWeight: 500 }}
-                      >
-                        {formatAmount(tx.amount)}
-                      </Typography>
                     </Box>
                   </TableCell>
                   <TableCell>

@@ -36,6 +36,7 @@ services:
       - PLAID_CLIENT_ID=6811b0c8ae79ac0022b608ea
       - PLAID_SECRET=59f9af53807fde9ae4a08673035004
       - PLAID_ENV=sandbox
+      - EXCHANGE_RATE_API_KEY=3718334aed30702bc6f102a1
     networks:
       - spendsmart-net
     # volumes:
