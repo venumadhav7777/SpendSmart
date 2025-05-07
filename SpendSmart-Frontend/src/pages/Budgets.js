@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Typography, Box, Button, TextField, CircularProgress, MenuItem, Alert, LinearProgress, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, IconButton, Tooltip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { exportBudgetsToPDF } from '../utils/pdfExport';
 import { fetchBudgets, createBudget, updateBudget, deleteBudget, fetchBudgetSummary } from '../api';
 import SectionCard from '../components/SectionCard';
 import { CheckCircle as CheckCircleIcon, Warning as WarningIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
@@ -186,9 +185,6 @@ function Budgets() {
         Budgets
       </Typography>
       <SectionCard sx={{ mb: 3 }}>
-        <Button variant="contained" onClick={() => exportBudgetsToPDF(budgets)} sx={{ mb: 2 }}>
-          Export to PDF
-        </Button>
         <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 2 }}>
           <TextField
             label="Name"

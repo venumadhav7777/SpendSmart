@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Grid, Box, Typography } from '@mui/material';
+import { Grid, Box, Typography, Button } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
@@ -22,6 +22,7 @@ import {
 } from 'recharts';
 import { fetchTransactionsFromDB, getBalance } from '../api';
 import { motion } from 'framer-motion';
+import { exportTransactionsToPDF } from '../utils/pdfExport';
 
 const COLORS = ['#2196F3', '#4CAF50', '#F44336', '#FFC107', '#9C27B0', '#00BCD4', '#10B981', '#3B82F6', '#14B8A6', '#34D399'];
 
@@ -185,6 +186,9 @@ const Reports = () => {
       <Typography variant="h4" sx={{ mb: 4 }}>
         Financial Reports
       </Typography>
+      <Button variant="contained" sx={{ mb: 2 }} onClick={() => exportTransactionsToPDF(transactions)}>
+        Export to PDF
+      </Button>
       <Grid container spacing={3}>
         <Grid item xs={12} sm={6} md={3}>
           <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.7, ease: 'easeOut' }}>
