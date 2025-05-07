@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTheme } from '@mui/material/styles';
 import {
   Typography,
   Box,
@@ -18,7 +19,6 @@ import {
   Alert,
   TablePagination
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
@@ -30,8 +30,11 @@ import { fetchTransactionsFromDB, refreshTransactions, fetchTransactions, create
 import SectionCard from '../components/SectionCard';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
+import { useAuth } from '../contexts/AuthContext';
+
 function Transactions() {
   const theme = useTheme();
+  const { isAuthenticated } = useAuth();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -39,6 +42,32 @@ function Transactions() {
   const [order, setOrder] = useState('desc');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Helper to determine if transaction is income or transfer_in
+  const isIncomeTransaction = (tx) => {
+    const incomeCategories = ['Income', 'Transfer In', 'transfer_in', 'income'];
+    // Debug log
+    // console.log('Checking income transaction:', tx.name, tx.category, tx.mapped_category);
+    if (tx.mapped_category) {
+      const primary = tx.mapped_category.primary.toLowerCase();
+      const description = tx.mapped_category.description.toLowerCase();
+      if (incomeCategories.some(cat => primary.includes(cat.toLowerCase()) || description.includes(cat.toLowerCase()))) {
+        return true;
+      }
+    }
+    if (tx.category) {
+      if (tx.category.some(cat => incomeCategories.some(inc => cat.toLowerCase().includes(inc.toLowerCase())))) {
+        return true;
+      }
+    }
+    if (tx.name) {
+      const nameLower = tx.name.toLowerCase();
+      if (incomeCategories.some(cat => nameLower.includes(cat.toLowerCase()))) {
+        return true;
+      }
+    }
+    return false;
+  };
 
   const handleFetchTransactions = async () => {
     try {
@@ -58,10 +87,11 @@ function Transactions() {
         startDate,
         formatDate(endDate)
       );
-      // console.log("Response", response);
       
       if (response.data && response.data.transactions) {
         setTransactions(response.data.transactions);
+        // Dispatch event to notify transactions updated
+        window.dispatchEvent(new Event('transactionsUpdated'));
       } else {
         setTransactions([]);
       }
@@ -144,6 +174,12 @@ function Transactions() {
   useEffect(() => {
     loadTransactions();
   }, []);
+
+  // useEffect(() => {
+  //   if (isAuthenticated) {
+  //     handleFetchTransactions();
+  //   }
+  // }, [isAuthenticated]);
 
   const formatAmount = (amount) => {
     return new Intl.NumberFormat('en-IN', {
@@ -254,14 +290,12 @@ function Transactions() {
                 >
                   <TableCell>{formatDate(tx.date)}</TableCell>
                   <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {tx.name}
-                      {tx.merchant_name && (
-                        <MuiTooltip title="Merchant">
-                          <InfoIcon fontSize="small" color="action" />
-                        </MuiTooltip>
-                      )}
-                    </Box>
+                    {tx.name}
+                    {tx.merchant_name && (
+                      <MuiTooltip title="Merchant">
+                        <InfoIcon fontSize="small" color="action" />
+                      </MuiTooltip>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
@@ -298,98 +332,44 @@ function Transactions() {
                     </Box>
                   </TableCell>
                   <TableCell>
-                  <Box sx={{ display: 'flex', alignItems<thinking>
-In Transactions.js, there are hardcoded colors for icons and typography such as '#4CAF50' and '#F44336' which may not adapt well to dark mode.
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {isIncomeTransaction(tx) ? (
+                        <TrendingUpIcon color="success" fontSize="small" />
+                      ) : (
+                        <TrendingDownIcon color="error" fontSize="small" />
+                      )}
+                      <Typography
+                        color={isIncomeTransaction(tx) ? 'success' : 'error'}
+                        sx={{ fontWeight: 500 }}
+                      >
+                        {isIncomeTransaction(tx) ? formatAmount(Math.abs(tx.amount)) : formatAmount(tx.amount)}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={tx.pending ? 'Pending' : 'Completed'}
+                      color={tx.pending ? 'warning' : 'success'}
+                      size="small"
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <TablePagination
+            component="div"
+            count={sortedTransactions.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5, 10, 25, 50, 100]}
+          />
+        </TableContainer>
+      </SectionCard>
+    </Box>
+  );
+}
 
-I will update these colors to use theme.palette.success.main and theme.palette.error.main respectively.
-
-I will import useTheme from '@mui/material/styles' and use it in the component.
-
-I will proceed to edit Transactions.js accordingly.
-</thinking>
-
-<edit_file>
-<path>SpendSmart-Frontend/src/pages/Transactions.js</path>
-<content>
-<<<<<<< SEARCH
-import React, { useEffect, useState } from 'react';
-import {
-  Typography,
-  Box,
-  Button,
-  CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  IconButton,
-  Tooltip as MuiTooltip,
-  TableSortLabel,
-  Alert,
-  TablePagination
-} from '@mui/material';
-import {
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
-  LocationOn as LocationIcon,
-  Info as InfoIcon,
-  Refresh as RefreshIcon
-} from '@mui/icons-material';
-import { fetchTransactionsFromDB, refreshTransactions, fetchTransactions, createPublicToken, exchangePublicToken, syncTransactions } from '../api';
-import SectionCard from '../components/SectionCard';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-
-function Transactions() {
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [orderBy, setOrderBy] = useState('date');
-  const [order, setOrder] = useState('desc');
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-=======
-import React, { useEffect, useState } from 'react';
-import { useTheme } from '@mui/material/styles';
-import {
-  Typography,
-  Box,
-  Button,
-  CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  IconButton,
-  Tooltip as MuiTooltip,
-  TableSortLabel,
-  Alert,
-  TablePagination
-} from '@mui/material';
-import {
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
-  LocationOn as LocationIcon,
-  Info as InfoIcon,
-  Refresh as RefreshIcon
-} from '@mui/icons-material';
-import { fetchTransactionsFromDB, refreshTransactions, fetchTransactions, createPublicToken, exchangePublicToken, syncTransactions } from '../api';
-import SectionCard from '../components/SectionCard';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-
-function Transactions() {
-  const theme = useTheme();
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [orderBy, setOrderBy] = useState('date');
-  const [order, setOrder] = useState('desc');
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+export default Transactions;

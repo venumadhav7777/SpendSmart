@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Typography, Box, Button, TextField, CircularProgress, MenuItem, Alert, LinearProgress, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, IconButton, Tooltip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { exportBudgetsToPDF } from '../utils/pdfExport';
-import { fetchBudgets, createBudget, updateBudget, deleteBudget } from '../api';
+import { fetchBudgets, createBudget, updateBudget, deleteBudget, fetchBudgetSummary } from '../api';
 import SectionCard from '../components/SectionCard';
 import { CheckCircle as CheckCircleIcon, Warning as WarningIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
@@ -62,10 +62,11 @@ function Budgets() {
     setLoading(true);
     setError('');
     try {
-      const response = await fetchBudgets();
+      // Fetch budgets summary instead of just budgets
+      const response = await fetchBudgetSummary();
       setBudgets(response.data || []);
     } catch (err) {
-      setError('Failed to fetch budgets.');
+      setError('Failed to fetch budgets summary.');
     } finally {
       setLoading(false);
     }
@@ -96,10 +97,20 @@ function Budgets() {
 
   useEffect(() => {
     loadBudgets();
+
+    // Listen for transactionsUpdated event to reload budgets
+    const handleTransactionsUpdated = () => {
+      loadBudgets();
+    };
+    window.addEventListener('transactionsUpdated', handleTransactionsUpdated);
+
+    return () => {
+      window.removeEventListener('transactionsUpdated', handleTransactionsUpdated);
+    };
   }, []);
 
   const startEditing = (budget) => {
-    setEditingBudgetId(budget._id);
+    setEditingBudgetId(budget.budgetId);
     setEditBudget({
       name: budget.name,
       category: budget.category,
@@ -107,6 +118,8 @@ function Budgets() {
       period: budget.period
     });
   };
+
+  // Fix: prevent multiple budgets entering edit mode simultaneously by ensuring unique keys and state
 
   const cancelEditing = () => {
     setEditingBudgetId(null);
@@ -148,7 +161,7 @@ function Budgets() {
   const confirmDelete = async () => {
     if (!budgetToDelete) return;
     try {
-      await deleteBudget(budgetToDelete._id);
+      await deleteBudget(budgetToDelete.budgetId || budgetToDelete._id);
       closeDeleteDialog();
       loadBudgets();
     } catch (err) {
@@ -232,15 +245,22 @@ function Budgets() {
             Create Budget
           </Button>
         </Box>
-        {loading && <CircularProgress />}
+        {loading && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <LinearProgress sx={{ flexGrow: 1, height: 10, borderRadius: 5, backgroundColor: theme.palette.grey[300] }} />
+            <Typography variant="body2" color="textSecondary" sx={{ minWidth: 100 }}>
+              Loading budgets...
+            </Typography>
+          </Box>
+        )}
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Box>
           {budgets.map((budget) => {
             const status = getBudgetStatus(budget);
-            const isEditing = editingBudgetId === budget._id;
+            const isEditing = editingBudgetId === budget.budgetId;
 
             return (
-              <Box key={budget._id} sx={{ mb: 2 }}>
+              <Box key={budget.budgetId} sx={{ mb: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, alignItems: 'center' }}>
                   {isEditing ? (
                     <>
@@ -321,7 +341,7 @@ function Budgets() {
                 sx={{
                   height: 8,
                   borderRadius: 4,
-                  backgroundColor: theme.palette.background.paper,
+                  backgroundColor: theme.palette.grey[300],
                   '& .MuiLinearProgress-bar': {
                     backgroundColor: status.color,
                     borderRadius: 4

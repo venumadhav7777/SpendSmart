@@ -4,6 +4,7 @@ import { login, createPublicToken, exchangePublicToken } from '../api';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import SectionCard from '../components/SectionCard';
+import handleFetchTransactions from './Transactions';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -32,6 +33,7 @@ function Login() {
       try {
         await createPublicToken();
         await exchangePublicToken();
+        await handleFetchTransactions();
       } catch (tokenError) {
         console.error('Error with token creation/exchange:', tokenError);
         // Continue with navigation even if token creation fails

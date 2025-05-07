@@ -95,8 +95,8 @@ exports.getBudgetSummary = async (req, res) => {
         }
         const token = authHeader.split(' ')[1];
 
-        // 2️⃣ Trigger a refresh + sync before calculating budgets
-        await syncAndCategorize(token, userId);
+        // 2️⃣ Remove the refresh + sync before calculating budgets
+        // await syncAndCategorize(token, userId);
 
         // 3️⃣ Fetch all budgets for this user
         const authUser = new mongoose.Types.ObjectId(req.user.id);
@@ -188,6 +188,7 @@ exports.getBudgetSummary = async (req, res) => {
             return {
                 budgetId: b._id,
                 name: b.name,
+                category: b.category,
                 limit: b.limit,
                 period: b.period,
                 spent,
@@ -289,7 +290,7 @@ const checkBudgetAndNotify = async (budget, user, userEmail) => {
       console.log(`Budget reached 50%, sending warning to:`, userEmail);
     }
 
-    const updatedBudget = Budget.findOne({ _id: budget._id });
+    const updatedBudget = await Budget.findOne({ _id: budget._id });
 
     console.log('Budget updated:', updatedBudget);
     return updatedBudget;

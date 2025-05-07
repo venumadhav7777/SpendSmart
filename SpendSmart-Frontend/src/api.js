@@ -94,7 +94,7 @@ export const fetchTransactions = (startDate, endDate) => {
 };
 
 export const syncTransactions = (count) => {
-  return api.post('/api/transactions/sync', { count });
+  return api.post('/api/transactions/sync', { count: count });
 };
 
 export const refreshTransactions = () => {
@@ -129,4 +129,8 @@ export const chatWithAI = async (messages) => {
     },
     body: JSON.stringify({ messages })
   });
+};
+
+export const fetchBudgetSummary = () => {
+  return api.get('/api/budgets/summary');
 };
