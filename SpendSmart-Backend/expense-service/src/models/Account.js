@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 const accountSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    ref: 'User'
+    required: true
   },
   name: {
     type: String,
@@ -19,6 +18,10 @@ const accountSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  noOfExpenses: {
+    type: Number,
+    default: 0,
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Account', accountSchema);

@@ -1,4 +1,5 @@
 const Account = require('../models/Account');
+// const mongoose = require('mongoose');
 
 // Create a new account associated with the authenticated user
 exports.createAccount = async (req, res) => {
@@ -11,6 +12,7 @@ exports.createAccount = async (req, res) => {
       name,
       type,
       balance,
+      noOfExpenses: 0
     });
 
     const savedAccount = await account.save();
@@ -39,7 +41,7 @@ exports.getAccountById = async (req, res) => {
 
     const account = await Account.findOne({ _id: accountId, userId });
     if (!account) {
-      return res.status(404).json({ message: 'Account not found' });
+      return res.status(404).json({ message: 'Account not found or not authorized' });
     }
     res.json(account);
   } catch (error) {
@@ -54,17 +56,17 @@ exports.updateAccount = async (req, res) => {
     const accountId = req.params.id;
     const { name, type, balance } = req.body;
 
-    const account = await Account.findOneAndUpdate(
-      { _id: accountId, userId },
-      { name, type, balance },
-      { new: true }
-    );
-
+    const account = await Account.findOne({ _id: accountId, userId });
     if (!account) {
       return res.status(404).json({ message: 'Account not found or not authorized' });
     }
 
-    res.json(account);
+    account.name = name || account.name;
+    account.type = type || account.type;
+    account.balance = balance || account.balance;
+
+    const updatedAccount = await account.save();
+    res.json(updatedAccount);
   } catch (error) {
     res.status(500).json({ message: 'Failed to update account', error: error.message });
   }
@@ -76,11 +78,16 @@ exports.deleteAccount = async (req, res) => {
     const userId = req.user.id;
     const accountId = req.params.id;
 
-    const account = await Account.findOneAndDelete({ _id: accountId, userId });
+    const account = await Account.findOne({ _id: accountId, userId });
     if (!account) {
       return res.status(404).json({ message: 'Account not found or not authorized' });
     }
 
+    if (account.noOfExpenses > 0) {
+      return res.status(400).json({ message: 'Cannot delete account with existing expenses' });
+    }
+
+    await account.remove();
     res.json({ message: 'Account deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Failed to delete account', error: error.message });

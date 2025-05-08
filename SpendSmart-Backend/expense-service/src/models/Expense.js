@@ -1,5 +1,22 @@
 const mongoose = require('mongoose');
 
+const allowedCategories = [
+    'Income',
+    'Food', 
+    'Transport',
+    'Shopping',
+    'Debt',
+    'Fees',
+    'Housing',
+    'Entertainment', 
+    'Health',
+    'Travel',
+    'Personal',
+    'Subscriptions',
+    'Investments',
+    'Other'
+];
+
 const expenseSchema = new mongoose.Schema({
   accountId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -20,6 +37,7 @@ const expenseSchema = new mongoose.Schema({
   },
   category: {
     type: String,
+    enum: allowedCategories,
     default: 'Other',
   },
 }, { timestamps: true });
