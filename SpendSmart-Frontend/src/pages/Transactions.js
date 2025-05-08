@@ -32,6 +32,9 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recha
 
 import { useAuth } from '../contexts/AuthContext';
 
+// Import export function for PDF
+import { exportTransactionsToPDF } from '../utils/pdfExport';
+
 function Transactions() {
   const theme = useTheme();
   const { isAuthenticated } = useAuth();
@@ -46,8 +49,6 @@ function Transactions() {
   // Helper to determine if transaction is income or transfer_in
   const isIncomeTransaction = (tx) => {
     const incomeCategories = ['Income', 'Transfer In', 'transfer_in', 'income'];
-    // Debug log
-    // console.log('Checking income transaction:', tx.name, tx.category, tx.mapped_category);
     if (tx.mapped_category) {
       const primary = tx.mapped_category.primary.toLowerCase();
       const description = tx.mapped_category.description.toLowerCase();
@@ -71,26 +72,17 @@ function Transactions() {
 
   const handleFetchTransactions = async () => {
     try {
-      console.log("Fetching transactions from Plaid");
-      // Get current date
       const endDate = new Date();
       const startDate = "2023-01-01";
-      
-      // Format dates to YYYY-MM-DD
       const formatDate = (date) => {
         return date.toISOString().split('T')[0];
       };
-
-      console.log("startDate", startDate, "endDate", formatDate(endDate));
-
       const response = await fetchTransactions(
         startDate,
         formatDate(endDate)
       );
-      
       if (response.data && response.data.transactions) {
         setTransactions(response.data.transactions);
-        // Dispatch event to notify transactions updated
         window.dispatchEvent(new Event('transactionsUpdated'));
       } else {
         setTransactions([]);
@@ -109,8 +101,6 @@ function Transactions() {
       if (response.data.transactions && response.data.transactions.length > 0) {
         setTransactions(response.data.transactions);
       } else {
-        // If no transactions in DB, fetch from Plaid
-        console.log("No transactions in DB, fetching from Plaid");
         await handleFetchTransactions();
       }
     } catch (err) {
@@ -132,12 +122,8 @@ function Transactions() {
     setLoading(true);
     setError('');
     try {
-      console.log("Refreshing Transactions")
       await refreshTransactions();
-      // Sync incremental updates
-      console.log("Syncing Transactions")
       await handleSyncTransactions();
-      // Load transactions from DB
       await loadTransactions();
     } catch (err) {
       setError('Failed to refresh transactions.');
@@ -175,12 +161,6 @@ function Transactions() {
     loadTransactions();
   }, []);
 
-  // useEffect(() => {
-  //   if (isAuthenticated) {
-  //     handleFetchTransactions();
-  //   }
-  // }, [isAuthenticated]);
-
   const formatAmount = (amount) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -205,29 +185,8 @@ function Transactions() {
     setPage(0);
   };
 
-  const processTransactions = (transactions) => {
-    const categories = {};
-    transactions.forEach((tx) => {
-      const category = tx.category || tx.name;
-      if (!categories[category]) {
-        categories[category] = { total: 0, color: getRandomColor() };
-      }
-      categories[category].total += Math.abs(tx.amount);
-    });
-    return Object.entries(categories).map(([category, data]) => ({
-      category,
-      total: data.total,
-      color: data.color
-    }));
-  };
-
-  const getRandomColor = () => {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-      color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
+  const handleExportPDF = () => {
+    exportTransactionsToPDF(transactions);
   };
 
   return (
@@ -243,6 +202,12 @@ function Transactions() {
             startIcon={<RefreshIcon />}
           >
             Refresh Transactions
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={handleExportPDF}
+          >
+            Export to PDF
           </Button>
         </Box>
         {loading && <CircularProgress />}

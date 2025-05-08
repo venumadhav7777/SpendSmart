@@ -5,6 +5,9 @@ import { fetchBudgets, createBudget, updateBudget, deleteBudget, fetchBudgetSumm
 import SectionCard from '../components/SectionCard';
 import { CheckCircle as CheckCircleIcon, Warning as WarningIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
+// Import export function for PDF
+import { exportBudgetsToPDF } from '../utils/pdfExport';
+
 function Budgets() {
   const theme = useTheme();
   const [budgets, setBudgets] = useState([]);
@@ -61,7 +64,6 @@ function Budgets() {
     setLoading(true);
     setError('');
     try {
-      // Fetch budgets summary instead of just budgets
       const response = await fetchBudgetSummary();
       setBudgets(response.data || []);
     } catch (err) {
@@ -72,18 +74,14 @@ function Budgets() {
   };
 
   const handleCreateBudget = async () => {
-    // Validate inputs
     if (!newBudget.name || !newBudget.category || !newBudget.limit || !newBudget.period) {
       setError('Please fill in all fields');
       return;
     }
-
-    // Convert limit to number
     const budgetData = {
       ...newBudget,
       limit: parseFloat(newBudget.limit)
     };
-
     setError('');
     try {
       await createBudget(budgetData);
@@ -96,13 +94,10 @@ function Budgets() {
 
   useEffect(() => {
     loadBudgets();
-
-    // Listen for transactionsUpdated event to reload budgets
     const handleTransactionsUpdated = () => {
       loadBudgets();
     };
     window.addEventListener('transactionsUpdated', handleTransactionsUpdated);
-
     return () => {
       window.removeEventListener('transactionsUpdated', handleTransactionsUpdated);
     };
@@ -117,8 +112,6 @@ function Budgets() {
       period: budget.period
     });
   };
-
-  // Fix: prevent multiple budgets entering edit mode simultaneously by ensuring unique keys and state
 
   const cancelEditing = () => {
     setEditingBudgetId(null);
@@ -177,6 +170,10 @@ function Budgets() {
       style: 'currency',
       currency: 'INR'
     }).format(amount);
+  };
+
+  const handleExportPDF = () => {
+    exportBudgetsToPDF(budgets);
   };
 
   return (
@@ -239,6 +236,13 @@ function Budgets() {
             disabled={loading}
           >
             Create Budget
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={handleExportPDF}
+            sx={{ alignSelf: 'center' }}
+          >
+            Export to PDF
           </Button>
         </Box>
         {loading && (
@@ -349,26 +353,6 @@ function Budgets() {
         })}
       </Box>
       </SectionCard>
-
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={closeDeleteDialog}
-        aria-labelledby="delete-dialog-title"
-        aria-describedby="delete-dialog-description"
-      >
-        <DialogTitle id="delete-dialog-title">Confirm Delete</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="delete-dialog-description">
-            Are you sure you want to delete this budget?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDeleteDialog}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained" autoFocus>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 }

@@ -22,7 +22,7 @@ import {
 } from 'recharts';
 import { fetchTransactionsFromDB, getBalance } from '../api';
 import { motion } from 'framer-motion';
-import { exportTransactionsToPDF } from '../utils/pdfExport';
+import { exportReportsToPDF } from '../utils/pdfExport';
 
 const COLORS = ['#2196F3', '#4CAF50', '#F44336', '#FFC107', '#9C27B0', '#00BCD4', '#10B981', '#3B82F6', '#14B8A6', '#34D399'];
 
@@ -186,7 +186,17 @@ const Reports = () => {
       <Typography variant="h4" sx={{ mb: 4 }}>
         Financial Reports
       </Typography>
-      <Button variant="contained" sx={{ mb: 2 }} onClick={() => exportTransactionsToPDF(transactions)}>
+      <Button variant="contained" sx={{ mb: 2 }} onClick={() => exportReportsToPDF({
+        balance,
+        monthlyData,
+        savingsRate,
+        spendingData,
+        detailedSpendingData: spendingData.map(s => ({
+          name: s.name,
+          value: s.value,
+          percentage: (s.value / spendingData.reduce((acc, cur) => acc + cur.value, 0)) * 100
+        }))
+      })}>
         Export to PDF
       </Button>
       <Grid container spacing={3}>

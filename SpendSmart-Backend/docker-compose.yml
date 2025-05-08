@@ -41,6 +41,21 @@ services:
       - spendsmart-net
     # volumes:
     #   - ./transactions-service:/app
+
+  expense-service:
+    build: ./expense-service
+    container_name: expense-service
+    ports:
+      - "3005:3005"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/spendsmart_transactions
+      - PORT=3005
+      - JWT_SECRET=supersecretkey123456789
+      - EXCHANGE_RATE_API_KEY=3718334aed30702bc6f102a1
+    networks:
+      - spendsmart-net
+    # volumes:
+    #   - ./expense-service:/app
     
   budget-savings-service:
     build: ./budget-savings-service
