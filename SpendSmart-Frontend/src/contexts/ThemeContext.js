@@ -1,111 +1,118 @@
-import React, { createContext, useState, useMemo, useEffect } from 'react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import React, { createContext, useState, useMemo } from 'react';
+import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 
-const lightPalette = {
-  primary: {
-    main: '#2196F3',
-    light: '#64B5F6',
-    dark: '#1976D2',
-  },
-  secondary: {
-    main: '#00BCD4',
-    light: '#4DD0E1',
-    dark: '#0097A7',
-  },
-  background: {
-    default: '#F5F7FA',
-    paper: '#FFFFFF',
-  },
-  text: {
-    primary: '#2C3E50',
-    secondary: '#546E7A',
-  },
-};
-
-const darkPalette = {
-  primary: {
-    main: '#90caf9',
-    light: '#e3f2fd',
-    dark: '#42a5f5',
-  },
-  secondary: {
-    main: '#80deea',
-    light: '#b2ebf2',
-    dark: '#4dd0e1',
-  },
-  background: {
-    default: '#2c2c2c',
-    paper: '#3a3a3a',
-  },
-  text: {
-    primary: '#e0e0e0',
-    secondary: '#b0b0b0',
-  },
-  action: {
-    active: '#90caf9',
-    hover: '#64b5f6',
-    selected: '#42a5f5',
-    disabled: '#777777',
-    disabledBackground: '#444444',
-  },
-};
-
-const ThemeContext = createContext({
-  toggleTheme: () => {},
-  mode: 'light',
-});
+export const ThemeContext = createContext();
 
 export const CustomThemeProvider = ({ children }) => {
-  const [mode, setMode] = useState('light');
-
-  useEffect(() => {
+  const [mode, setMode] = useState(() => {
     const savedMode = localStorage.getItem('themeMode');
-    if (savedMode === 'dark' || savedMode === 'light') {
-      setMode(savedMode);
-    }
-  }, []);
+    return savedMode || 'light';
+  });
 
-  const toggleTheme = () => {
-    setMode((prevMode) => {
-      const newMode = prevMode === 'light' ? 'dark' : 'light';
-      localStorage.setItem('themeMode', newMode);
-      return newMode;
-    });
-  };
-
-  const theme = useMemo(() => createTheme({
-    palette: mode === 'light' ? lightPalette : darkPalette,
-    typography: {
-      fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-    },
-    components: {
-      MuiSvgIcon: {
-        styleOverrides: {
-          root: {
-            color: mode === 'light' ? undefined : '#90caf9',
-          },
-        },
-      },
-      MuiListItemText: {
-        styleOverrides: {
+  const theme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode,
           primary: {
-            color: mode === 'light' ? undefined : '#e0e0e0',
+            main: '#2196f3',
+            light: '#64b5f6',
+            dark: '#1976d2',
           },
           secondary: {
-            color: mode === 'light' ? undefined : '#b0b0b0',
+            main: '#f50057',
+            light: '#ff4081',
+            dark: '#c51162',
+          },
+          background: {
+            default: mode === 'dark' ? '#121212' : '#f5f5f5',
+            paper: mode === 'dark' ? '#1e1e1e' : '#ffffff',
+          },
+          text: {
+            primary: mode === 'dark' ? '#ffffff' : '#2c3e50',
+            secondary: mode === 'dark' ? '#b0bec5' : '#546e7a',
+          },
+          divider: mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
+        },
+        components: {
+          MuiCssBaseline: {
+            styleOverrides: {
+              body: {
+                transition: 'background-color 0.3s ease',
+              },
+            },
+          },
+          MuiCard: {
+            styleOverrides: {
+              root: {
+                transition: 'background-color 0.3s ease, box-shadow 0.3s ease',
+                boxShadow: mode === 'dark' 
+                  ? '0 2px 4px rgba(0,0,0,0.2)' 
+                  : '0 2px 4px rgba(0,0,0,0.1)',
+              },
+            },
+          },
+          MuiAppBar: {
+            styleOverrides: {
+              root: {
+                transition: 'background-color 0.3s ease',
+              },
+            },
+          },
+          MuiDrawer: {
+            styleOverrides: {
+              paper: {
+                transition: 'background-color 0.3s ease',
+              },
+            },
+          },
+          MuiListItemButton: {
+            styleOverrides: {
+              root: {
+                transition: 'background-color 0.3s ease',
+              },
+            },
+          },
+          MuiSwitch: {
+            styleOverrides: {
+              root: {
+                transition: 'background-color 0.3s ease',
+              },
+            },
           },
         },
-      },
-    },
-  }), [mode]);
+        typography: {
+          fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+          h4: {
+            fontWeight: 600,
+          },
+          h5: {
+            fontWeight: 600,
+          },
+          h6: {
+            fontWeight: 600,
+          },
+        },
+        shape: {
+          borderRadius: 8,
+        },
+      }),
+    [mode]
+  );
+
+  const toggleTheme = () => {
+    const newMode = mode === 'light' ? 'dark' : 'light';
+    setMode(newMode);
+    localStorage.setItem('themeMode', newMode);
+  };
 
   return (
-    <ThemeContext.Provider value={{ toggleTheme, mode }}>
-      <ThemeProvider theme={theme}>
+    <ThemeContext.Provider value={{ mode, toggleTheme }}>
+      <MuiThemeProvider theme={theme}>
+        <CssBaseline />
         {children}
-      </ThemeProvider>
+      </MuiThemeProvider>
     </ThemeContext.Provider>
   );
 };
-
-export default ThemeContext;

@@ -1,6 +1,18 @@
 const Transaction = require('../models/Transaction');
 const Account = require('../models/Account');
 
+// Helper function to check if transaction is income
+const isIncomeTransaction = (category) => {
+  return category.toLowerCase() === 'income';
+};
+
+// Helper function to validate transaction amount against account balance
+const validateTransactionAmount = (account, amount, isIncome) => {
+  if (!isIncome && amount > account.balance) {
+    throw new Error(`Insufficient funds. Available balance: ${account.balance}`);
+  }
+};
+
 // Get expenses by account ID
 exports.getTransactionsByAccountId = async (req, res) => {
   try {
@@ -33,7 +45,16 @@ exports.createTransaction = async (req, res) => {
       return res.status(404).json({ message: 'Account not found or not authorized' });
     }
 
-    const expense = new Transaction({
+    const isIncome = isIncomeTransaction(category);
+
+    // Validate transaction amount for expenses (not income)
+    try {
+      validateTransactionAmount(account, amount, isIncome);
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    const transaction = new Transaction({
       accountId,
       description,
       amount,
@@ -41,13 +62,14 @@ exports.createTransaction = async (req, res) => {
       category,
     });
 
-    const savedExpense = await expense.save();
+    const savedTransaction = await transaction.save();
 
-    account.balance -= amount;
+    // Update account balance (add for income, subtract for expense)
+    account.balance = isIncome ? account.balance + amount : account.balance - amount;
     account.noOfExpenses += 1;
     await account.save();
 
-    res.status(201).json(savedExpense);
+    res.status(201).json(savedTransaction);
   } catch (error) {
     res.status(500).json({ message: 'Failed to create transaction', error: error.message });
   }
@@ -120,15 +142,45 @@ exports.updateTransaction = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to update this transaction' });
     }
 
-    // Adjust account balance if amount changed
-    const amountDifference = amount - transaction.amount;
-    account.balance -= amountDifference;
+    const oldIsIncome = isIncomeTransaction(transaction.category);
+    const newIsIncome = category ? isIncomeTransaction(category) : oldIsIncome;
+
+    // First, revert the old transaction's effect on balance
+    account.balance = oldIsIncome 
+      ? account.balance - transaction.amount 
+      : account.balance + transaction.amount;
+
+    // Validate new amount if it's an expense
+    if (amount && !newIsIncome) {
+      try {
+        validateTransactionAmount(account, amount, newIsIncome);
+      } catch (error) {
+        // Restore original balance before returning error
+        account.balance = oldIsIncome 
+          ? account.balance + transaction.amount 
+          : account.balance - transaction.amount;
+        return res.status(400).json({ message: error.message });
+      }
+    }
+
+    // Apply the new transaction amount
+    if (amount) {
+      account.balance = newIsIncome 
+        ? account.balance + amount 
+        : account.balance - amount;
+    } else {
+      account.balance = newIsIncome 
+        ? account.balance + transaction.amount 
+        : account.balance - transaction.amount;
+    }
+
     await account.save();
 
-    transaction.description = description;
-    transaction.amount = amount;
-    transaction.date = date;
-    transaction.category = category;
+    // Update transaction
+    transaction.description = description || transaction.description;
+    transaction.amount = amount || transaction.amount;
+    transaction.date = date || transaction.date;
+    transaction.category = category || transaction.category;
 
     const updatedTransaction = await transaction.save();
     res.json(updatedTransaction);
@@ -141,29 +193,42 @@ exports.updateTransaction = async (req, res) => {
 exports.getTransactionsByAccounts = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { accountIds } = req.body;
+    const { startDate, endDate, accounts: accountIds } = req.body;
 
-    if (!accountIds || !Array.isArray(accountIds) || accountIds.length === 0) {
-      return res.status(400).json({ message: 'Invalid or empty account IDs' });
-    }
+    // If no accounts provided, fetch all user's accounts
+    const userAccounts = await Account.find({ userId });
+    const validAccountIds = accountIds && accountIds.length > 0 
+      ? accountIds 
+      : userAccounts.map(acc => acc._id);
 
     // Verify all accounts belong to the user
-    const accounts = await Account.find({ _id: { $in: accountIds }, userId });
-    if (accounts.length !== accountIds.length) {
+    const accounts = await Account.find({ _id: { $in: validAccountIds }, userId });
+    if (accounts.length !== validAccountIds.length) {
       return res.status(403).json({ message: 'Not authorized to view transactions for some accounts' });
     }
 
-    // Find transactions for the specified accounts
-    const transactions = await Transaction.find({
-      accountId: { $in: accountIds }
-    }).sort({ date: -1 });
+    // Prepare date filter
+    const dateFilter = {};
+    if (startDate) dateFilter.$gte = new Date(startDate);
+    if (endDate) dateFilter.$lte = new Date(endDate);
 
-    res.json(transactions);
+    // Find transactions for the specified accounts and date range
+    const query = {
+      accountId: { $in: validAccountIds }
+    };
+    if (Object.keys(dateFilter).length > 0) {
+      query.date = dateFilter;
+    }
+
+    const transactions = await Transaction.find(query).sort({ date: -1 });
+
+    res.status(200).json(transactions);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch transactions', error: error.message });
   }
 };
 
+// Delete a transaction
 exports.deleteTransaction = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -180,8 +245,11 @@ exports.deleteTransaction = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to delete this transaction' });
     }
 
-    // Adjust account balance and number of transactions
-    account.balance += transaction.amount;
+    // Adjust account balance based on transaction type
+    const isIncome = isIncomeTransaction(transaction.category);
+    account.balance = isIncome 
+      ? account.balance - transaction.amount 
+      : account.balance + transaction.amount;
     account.noOfExpenses -= 1;
     await account.save();
 

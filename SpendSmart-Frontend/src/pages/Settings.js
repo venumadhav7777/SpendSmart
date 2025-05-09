@@ -17,22 +17,15 @@ import {
   Avatar,
   CircularProgress,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
+  IconButton,
 } from '@mui/material';
 import {
   Person as PersonIcon,
   Notifications as NotificationsIcon,
-  Security as SecurityIcon,
-  Language as LanguageIcon,
   Palette as PaletteIcon,
-  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { fetchProfile, updateProfile } from '../api';
-import ThemeContext from '../contexts/ThemeContext';
+import { ThemeContext } from '../contexts/ThemeContext';
 
 const Settings = () => {
   const { toggleTheme, mode } = useContext(ThemeContext);
@@ -47,6 +40,7 @@ const Settings = () => {
     firstName: '',
     lastName: '',
     email: '',
+    avatar: null,
   });
 
   const [loading, setLoading] = useState(false);
@@ -54,10 +48,6 @@ const Settings = () => {
   const [error, setError] = useState('');
   const [saveError, setSaveError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
-  const [alertOpen, setAlertOpen] = useState(false);
 
   useEffect(() => {
     // Load notification preferences from localStorage
@@ -78,6 +68,7 @@ const Settings = () => {
             firstName: names[0] || '',
             lastName: names.slice(1).join(' ') || '',
             email: user.email || '',
+            avatar: user.avatar || null,
           });
         }
       } catch (err) {
@@ -104,13 +95,31 @@ const Settings = () => {
     }));
   };
 
+  const handleAvatarChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfile(prev => ({
+          ...prev,
+          avatar: reader.result
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSaveProfile = async () => {
     setSaving(true);
     setSaveError('');
     setSuccessMessage('');
     try {
       const fullName = `${profile.firstName} ${profile.lastName}`.trim();
-      await updateProfile({ name: fullName, email: profile.email });
+      await updateProfile({ 
+        name: fullName, 
+        email: profile.email,
+        avatar: profile.avatar 
+      });
       setSuccessMessage('Profile updated successfully');
     } catch (err) {
       setSaveError(err.response?.data?.message || 'Failed to update profile');
@@ -119,45 +128,20 @@ const Settings = () => {
     }
   };
 
-  const handleSecurityAction = (action) => {
-    setAlertMessage(`The "${action}" feature is not implemented yet.`);
-    setAlertOpen(true);
-  };
-
-  const handlePreferencesAction = (action) => {
-    setAlertMessage(`The "${action}" feature is not implemented yet.`);
-    setAlertOpen(true);
-  };
-
-  const handleDeleteAccount = () => {
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDeleteAccount = () => {
-    setDeleteDialogOpen(false);
-    setAlertMessage('Account deletion feature is not implemented yet.');
-    setAlertOpen(true);
-  };
-
-  const cancelDeleteAccount = () => {
-    setDeleteDialogOpen(false);
-  };
-
-  const closeAlert = () => {
-    setAlertOpen(false);
-  };
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box>
       <Typography variant="h4" sx={{ mb: 4 }}>
         Settings
       </Typography>
-
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <CircularProgress />
-        </Box>
-      ) : error ? (
+      {error ? (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
@@ -170,19 +154,43 @@ const Settings = () => {
                   Profile Settings
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                  <Avatar
-                    sx={{
-                      width: 80,
-                      height: 80,
-                      mr: 2,
-                      backgroundColor: 'primary.main',
-                    }}
-                  >
-                    {profile.firstName ? profile.firstName[0].toUpperCase() : 'U'}
-                  </Avatar>
-                  <Button variant="outlined" color="primary" disabled>
-                    Change Avatar
-                  </Button>
+                  <input
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    id="avatar-upload"
+                    type="file"
+                    onChange={handleAvatarChange}
+                  />
+                  <label htmlFor="avatar-upload">
+                    <Box sx={{ position: 'relative', cursor: 'pointer' }}>
+                      <Avatar
+                        src={profile.avatar}
+                        sx={{
+                          width: 80,
+                          height: 80,
+                          mr: 2,
+                          backgroundColor: 'primary.main',
+                        }}
+                      >
+                        {profile.firstName ? profile.firstName[0].toUpperCase() : 'U'}
+                      </Avatar>
+                      <IconButton
+                        sx={{
+                          position: 'absolute',
+                          bottom: 0,
+                          right: 0,
+                          backgroundColor: 'background.paper',
+                          '&:hover': { backgroundColor: 'background.paper' },
+                        }}
+                        size="small"
+                      >
+                        <PersonIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </label>
+                  <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+                    Click to change avatar
+                  </Typography>
                 </Box>
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
@@ -235,11 +243,13 @@ const Settings = () => {
                 </Grid>
               </CardContent>
             </Card>
+          </Grid>
 
-            <Card sx={{ mt: 3 }}>
+          <Grid item xs={12} md={6}>
+            <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Notification Preferences
+                  Notification Settings
                 </Typography>
                 <List>
                   <ListItem>
@@ -250,14 +260,10 @@ const Settings = () => {
                       primary="Email Notifications"
                       secondary="Receive updates via email"
                     />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={notifications.email}
-                          onChange={() => handleNotificationChange('email')}
-                        />
-                      }
-                      label=""
+                    <Switch
+                      edge="end"
+                      checked={notifications.email}
+                      onChange={() => handleNotificationChange('email')}
                     />
                   </ListItem>
                   <Divider />
@@ -267,16 +273,12 @@ const Settings = () => {
                     </ListItemIcon>
                     <ListItemText
                       primary="Push Notifications"
-                      secondary="Receive real-time updates"
+                      secondary="Receive push notifications"
                     />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={notifications.push}
-                          onChange={() => handleNotificationChange('push')}
-                        />
-                      }
-                      label=""
+                    <Switch
+                      edge="end"
+                      checked={notifications.push}
+                      onChange={() => handleNotificationChange('push')}
                     />
                   </ListItem>
                   <Divider />
@@ -286,54 +288,13 @@ const Settings = () => {
                     </ListItemIcon>
                     <ListItemText
                       primary="Weekly Reports"
-                      secondary="Get weekly financial summaries"
+                      secondary="Receive weekly spending reports"
                     />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={notifications.weeklyReport}
-                          onChange={() => handleNotificationChange('weeklyReport')}
-                        />
-                      }
-                      label=""
+                    <Switch
+                      edge="end"
+                      checked={notifications.weeklyReport}
+                      onChange={() => handleNotificationChange('weeklyReport')}
                     />
-                  </ListItem>
-                </List>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Security Settings
-                </Typography>
-                <List>
-                  <ListItem>
-                    <ListItemIcon>
-                      <SecurityIcon />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Two-Factor Authentication"
-                      secondary="Add an extra layer of security"
-                    />
-                    <Button variant="outlined" color="primary" onClick={() => handleSecurityAction('Two-Factor Authentication')}>
-                      Enable
-                    </Button>
-                  </ListItem>
-                  <Divider />
-                  <ListItem>
-                    <ListItemIcon>
-                      <SecurityIcon />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Change Password"
-                      secondary="Update your account password"
-                    />
-                    <Button variant="outlined" color="primary" onClick={() => handleSecurityAction('Change Password')}>
-                      Change
-                    </Button>
                   </ListItem>
                 </List>
               </CardContent>
@@ -342,55 +303,22 @@ const Settings = () => {
             <Card sx={{ mt: 3 }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Preferences
+                  Appearance
                 </Typography>
                 <List>
-                  <ListItem>
-                    <ListItemIcon>
-                      <LanguageIcon />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Language"
-                      secondary="English"
-                    />
-                    <Button variant="outlined" color="primary" onClick={() => handlePreferencesAction('Language')}>
-                      Change
-                    </Button>
-                  </ListItem>
-                  <Divider />
                   <ListItem>
                     <ListItemIcon>
                       <PaletteIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Theme"
-                      secondary={mode.charAt(0).toUpperCase() + mode.slice(1)}
+                      primary="Dark Mode"
+                      secondary="Switch between light and dark theme"
                     />
-                    <Button variant="outlined" color="primary" onClick={toggleTheme}>
-                      Toggle Theme
-                    </Button>
-                  </ListItem>
-                </List>
-              </CardContent>
-            </Card>
-
-            <Card sx={{ mt: 3 }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom color="error">
-                  Danger Zone
-                </Typography>
-                <List>
-                  <ListItem>
-                    <ListItemIcon>
-                      <DeleteIcon color="error" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Delete Account"
-                      secondary="Permanently delete your account and all data"
+                    <Switch
+                      edge="end"
+                      checked={mode === 'dark'}
+                      onChange={toggleTheme}
                     />
-                    <Button variant="outlined" color="error" onClick={handleDeleteAccount}>
-                      Delete
-                    </Button>
                   </ListItem>
                 </List>
               </CardContent>
@@ -398,45 +326,6 @@ const Settings = () => {
           </Grid>
         </Grid>
       )}
-
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={cancelDeleteAccount}
-        aria-labelledby="delete-dialog-title"
-        aria-describedby="delete-dialog-description"
-      >
-        <DialogTitle id="delete-dialog-title">Confirm Delete Account</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="delete-dialog-description">
-            Are you sure you want to permanently delete your account? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={cancelDeleteAccount}>Cancel</Button>
-          <Button onClick={confirmDeleteAccount} color="error" variant="contained" autoFocus>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog
-        open={alertOpen}
-        onClose={closeAlert}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">Feature Not Implemented</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            {alertMessage}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeAlert} autoFocus>
-            OK
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };

@@ -10,7 +10,13 @@ const budgetSchema = new mongoose.Schema({
     ownerMail: { type: String, required: true },
     spent: {type: Number, default: 0},
     remaining: {type: Number, default: 0},
-    percentUsed: {type: Number, default: 0}
+    percentUsed: {type: Number, default: 0},
+    notificationThresholds: {
+        exceeded: { type: Boolean, default: false },
+        ninety: { type: Boolean, default: false },
+        seventyFive: { type: Boolean, default: false },
+        fifty: { type: Boolean, default: false }
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Budget', budgetSchema);

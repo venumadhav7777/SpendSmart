@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Typography, Box, TextField, Button, Alert, Link } from '@mui/material';
-import { register, createPublicToken, exchangePublicToken, fetchTransactions } from '../api';
+import { register } from '../api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import SectionCard from '../components/SectionCard';
@@ -25,24 +25,7 @@ function Register() {
       // Store user data and token in AuthContext
       authLogin({ _id, name: userName, email: userEmail, role }, token);
 
-      // Create and exchange public token after successful registration
-      try {
-        await createPublicToken();
-        await exchangePublicToken();
-
-        const endDate = new Date();
-        const startDate = "2023-01-01";
-
-        // Format dates to YYYY-MM-DD
-        const formatDate = (date) => {
-          return date.toISOString().split('T')[0];
-        };
-
-        await fetchTransactions(startDate, formatDate(endDate));
-      } catch (tokenError) {
-        console.error('Error with token creation/exchange:', tokenError);
-        // Continue with navigation even if token creation fails
-      }
+      // Registration successful, navigate to dashboard
 
       navigate('/dashboard');
     } catch (err) {

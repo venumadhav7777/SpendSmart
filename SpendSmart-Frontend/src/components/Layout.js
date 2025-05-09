@@ -17,11 +17,13 @@ import {
   useMediaQuery,
   Menu,
   MenuItem,
+  ListItemButton,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
-  AccountBalance as TransactionsIcon,
+  AccountBalance as AccountsIcon,
+  Receipt as TransactionsIcon,
   Savings as SavingsIcon,
   Assessment as ReportsIcon,
   SmartToy as AIAdvisorIcon,
@@ -34,13 +36,14 @@ import {
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const drawerWidth = 240;
+const drawerWidth = 280;
 
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
+  { text: 'Accounts', icon: <AccountsIcon />, path: '/accounts' },
   { text: 'Transactions', icon: <TransactionsIcon />, path: '/transactions' },
   { text: 'Budgets', icon: <SavingsIcon />, path: '/budgets' },
-  { text: 'Savings', icon: <SavingsIcon />, path: '/savings' },
+  { text: 'Savings Goals', icon: <SavingsIcon />, path: '/savings' },
   { text: 'Reports', icon: <ReportsIcon />, path: '/reports' },
   { text: 'AI Advisor', icon: <AIAdvisorIcon />, path: '/ai-advisor' },
 ];
@@ -52,7 +55,7 @@ const Layout = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -64,11 +67,6 @@ const Layout = () => {
 
   const handleProfileMenuClose = () => {
     setAnchorEl(null);
-  };
-
-  const handleProfileClick = () => {
-    handleProfileMenuClose();
-    navigate('/profile');
   };
 
   const handleSettingsClick = () => {
@@ -83,55 +81,87 @@ const Layout = () => {
   };
 
   const drawer = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+    <Box sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      backgroundColor: 'background.paper',
+      borderRight: '1px solid',
+      borderColor: 'divider',
+      transition: 'background-color 0.3s ease, border-color 0.3s ease'
+    }}>
+      <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, color: 'primary.main' }}>
           SpendSmart
         </Typography>
       </Box>
       <Divider />
-      <List sx={{ flex: 1 }}>
+      <List sx={{ flex: 1, px: 2, py: 2 }}>
         {menuItems.map((item) => (
-          <ListItem
-            button
+          <ListItemButton
             key={item.text}
             onClick={() => navigate(item.path)}
             sx={{
               mb: 1,
               borderRadius: 2,
-              backgroundColor: location.pathname === item.path ? 'rgba(33, 150, 243, 0.08)' : 'transparent',
+              transition: 'all 0.2s ease',
+              backgroundColor: location.pathname === item.path ? 'rgba(33, 150, 243, 0.1)' : 'transparent',
               '&:hover': {
-                backgroundColor: 'rgba(33, 150, 243, 0.12)',
+                backgroundColor: 'rgba(33, 150, 243, 0.15)',
+                transform: 'translateX(5px)',
               },
             }}
           >
-            <ListItemIcon sx={{ color: location.pathname === item.path ? 'primary.main' : 'text.secondary' }}>
+            <ListItemIcon sx={{ 
+              color: location.pathname === item.path ? 'primary.main' : 'text.secondary',
+              minWidth: 40,
+              transition: 'color 0.2s ease'
+            }}>
               {item.icon}
             </ListItemIcon>
             <ListItemText
               primary={item.text}
-              sx={{
+              primaryTypographyProps={{
+                variant: 'body1',
                 color: location.pathname === item.path ? 'primary.main' : 'text.primary',
-                fontWeight: location.pathname === item.path ? 600 : 400,
+                fontWeight: location.pathname === item.path ? 700 : 500,
+                transition: 'color 0.2s ease'
               }}
             />
-          </ListItem>
+          </ListItemButton>
         ))}
       </List>
       <Divider />
-      <List>
-        <ListItem button onClick={() => navigate('/settings')}>
-          <ListItemIcon>
+      <List sx={{ px: 2, py: 2 }}>
+        <ListItemButton 
+          onClick={() => navigate('/settings')}
+          sx={{
+            borderRadius: 2,
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              backgroundColor: 'rgba(0,0,0,0.05)',
+              transform: 'translateX(5px)',
+            },
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 40, color: 'text.secondary', transition: 'color 0.2s ease' }}>
             <SettingsIcon />
           </ListItemIcon>
-          <ListItemText primary="Settings" />
-        </ListItem>
+          <ListItemText 
+            primary="Settings" 
+            primaryTypographyProps={{ 
+              variant: 'body1',
+              color: 'text.primary',
+              transition: 'color 0.2s ease'
+            }} 
+          />
+        </ListItemButton>
       </List>
     </Box>
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default', transition: 'background-color 0.3s ease' }}>
       <AppBar
         position="fixed"
         sx={{
@@ -142,6 +172,7 @@ const Layout = () => {
           boxShadow: 'none',
           borderBottom: '1px solid',
           borderColor: 'divider',
+          transition: 'background-color 0.3s ease, border-color 0.3s ease'
         }}
       >
         <Toolbar>
@@ -163,78 +194,63 @@ const Layout = () => {
             </IconButton>
             <IconButton
               onClick={handleProfileMenuOpen}
-              sx={{
-                padding: 0,
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                },
-              }}
+              size="small"
+              sx={{ ml: 2 }}
             >
-              <Avatar
-                sx={{
-                  width: 40,
-                  height: 40,
-                  cursor: 'pointer',
-                  backgroundColor: 'primary.main',
-                }}
-              >
-                U
+              <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+                {user?.name?.charAt(0) || 'U'}
               </Avatar>
             </IconButton>
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleProfileMenuClose}
-              PaperProps={{
-                elevation: 0,
-                sx: {
-                  overflow: 'visible',
-                  filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.15))',
-                  mt: 1.5,
-                  '& .MuiAvatar-root': {
-                    width: 32,
-                    height: 32,
-                    ml: -0.5,
-                    mr: 1,
-                  },
-                  '&:before': {
-                    content: '""',
-                    display: 'block',
-                    position: 'absolute',
-                    top: 0,
-                    right: 14,
-                    width: 10,
-                    height: 10,
-                    bgcolor: 'background.paper',
-                    transform: 'translateY(-50%) rotate(45deg)',
-                    zIndex: 0,
-                  },
-                },
-              }}
-              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-            >
-              <MenuItem onClick={handleProfileClick}>
-                <ListItemIcon>
-                  <PersonIcon fontSize="small" />
-                </ListItemIcon>
-                Profile
-              </MenuItem>
-              <MenuItem onClick={handleSettingsClick}>
-                <ListItemIcon>
-                  <SettingsIcon fontSize="small" />
-                </ListItemIcon>
-                Settings
-              </MenuItem>
-              <Divider />
-              <MenuItem onClick={handleLogoutClick}>
-                <ListItemIcon>
-                  <LogoutIcon fontSize="small" />
-                </ListItemIcon>
-                Logout
-              </MenuItem>
-            </Menu>
           </Box>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleProfileMenuClose}
+            PaperProps={{
+              elevation: 0,
+              sx: {
+                overflow: 'visible',
+                filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.15))',
+                mt: 1.5,
+                bgcolor: 'background.paper',
+                transition: 'background-color 0.3s ease',
+                '& .MuiAvatar-root': {
+                  width: 32,
+                  height: 32,
+                  ml: -0.5,
+                  mr: 1,
+                },
+                '&:before': {
+                  content: '""',
+                  display: 'block',
+                  position: 'absolute',
+                  top: 0,
+                  right: 14,
+                  width: 10,
+                  height: 10,
+                  bgcolor: 'background.paper',
+                  transform: 'translateY(-50%) rotate(45deg)',
+                  zIndex: 0,
+                },
+              },
+            }}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          >
+            <MenuItem onClick={handleSettingsClick}>
+              <ListItemIcon>
+                <SettingsIcon fontSize="small" />
+              </ListItemIcon>
+              Settings
+            </MenuItem>
+            <Divider />
+            <MenuItem onClick={handleLogoutClick}>
+              <ListItemIcon>
+                <LogoutIcon fontSize="small" />
+              </ListItemIcon>
+              Logout
+            </MenuItem>
+          </Menu>
         </Toolbar>
       </AppBar>
       <Box
@@ -254,6 +270,7 @@ const Layout = () => {
               boxSizing: 'border-box',
               borderRight: '1px solid',
               borderColor: 'divider',
+              transition: 'background-color 0.3s ease, border-color 0.3s ease'
             },
           }}
         >
@@ -264,15 +281,25 @@ const Layout = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: { xs: 2, md: 4 },
           width: { md: `calc(100% - ${drawerWidth}px)` },
-          mt: '64px',
+          mt: 8,
+          backgroundColor: 'background.default',
+          minHeight: '100vh',
+          transition: 'background-color 0.3s ease',
         }}
       >
-        <Outlet />
+        <Box sx={{
+          maxWidth: 1400,
+          mx: 'auto',
+          width: '100%',
+          py: { xs: 2, md: 4 },
+        }}>
+          <Outlet />
+        </Box>
       </Box>
     </Box>
   );
 };
 
-export default Layout; 
+export default Layout;

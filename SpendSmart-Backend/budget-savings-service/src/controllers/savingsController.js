@@ -75,21 +75,25 @@ exports.updateGoal = async (req, res) => {
             goal.contributions.push({
                 amount: contributionAmount,
                 type: 'manual'
-            });  // subdocument push :contentReference[oaicite:2]{index=2}
+            });
 
             await goal.save();
         }
 
-        // 3) send congrats if reached
-        if (goal.saved >= goal.target) {
+        // 3) send congrats if reached and not already notified
+        if (goal.saved >= goal.target && !goal.goalReachedNotified) {
             console.log('Goal reached!');
             console.log('Sending email...');
             await sendMail({
                 to: email,
                 subject: `Goal Reached: ${goal.name}`,
-                text: `🎉 You’ve reached your savings goal "${goal.name}"!`,
-                html: `<h1>🎉 You’ve reached your savings goal "${goal.name}"!</h1>`
+                text: `🎉 You've reached your savings goal "${goal.name}"!`,
+                html: `<h1>🎉 You've reached your savings goal "${goal.name}"!</h1>`
             });
+            
+            // Mark as notified
+            goal.goalReachedNotified = true;
+            await goal.save();
         }
 
         res.json(goal);

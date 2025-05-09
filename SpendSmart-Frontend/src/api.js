@@ -61,6 +61,31 @@ export const fetchBudgets = () => {
   return api.get('/api/budgets/');
 };
 
+export const fetchBudgetSummary = () => {
+  return api.get('/api/budgets/summary/transactions');
+};
+
+export const fetchBudgetSummaryWithTransactions = () => {
+  return api.get('/api/budgets/summary/transactions');
+};
+
+// Account-related API methods
+export const fetchAccounts = () => {
+  return api.get('/api/accounts/');
+};
+
+export const updateAccount = (accountId, accountData) => {
+  return api.put(`/api/accounts/${accountId}`, accountData);
+};
+
+export const createAccount = (accountData) => {
+  return api.post('/api/accounts/', accountData);
+};
+
+export const deleteAccount = (accountId) => {
+  return api.delete(`/api/accounts/${accountId}`);
+};
+
 export const createBudget = (budgetData) => {
   return api.post('/api/budgets/', budgetData);
 };
@@ -89,35 +114,28 @@ export const updateSavings = (goalId, updateData) => {
   return api.put(`/api/savings/${goalId}`, updateData);
 };
 
-export const fetchTransactions = (startDate, endDate) => {
-  return api.post('/api/transactions/get', { start_date: startDate, end_date: endDate });
+// Transaction-related API methods
+export const fetchTransactions = async () => {
+  return api.get('/api/transactions/');
 };
 
-export const syncTransactions = (count) => {
-  return api.post('/api/transactions/sync', { count: count });
+export const fetchTransactionsByAccount = (accountId) => {
+  return api.get(`/api/transactions/account/${accountId}`);
 };
 
-export const refreshTransactions = () => {
-  return api.post('/api/transactions/refresh');
-};
-
-export const createPublicToken = () => {
-  return api.post('/api/transactions/public_token', {
-    institution_id: "ins_20",
-    initial_products: ["transactions"]
+export const createTransaction = (accountId, transactionData) => {
+  return api.post('/api/transactions/', {
+    ...transactionData,
+    accountId
   });
 };
 
-export const exchangePublicToken = () => {
-  return api.post('/api/transactions/exchange_token', {});
+export const updateTransaction = (transactionId, transactionData) => {
+  return api.put(`/api/transactions/${transactionId}`, transactionData);
 };
 
-export const fetchTransactionsFromDB = async () => {
-  return api.get(`/api/transactions/db`);
-};
-
-export const getBalance = async () => {
-  return api.get('/api/transactions/balance');
+export const deleteTransaction = (transactionId) => {
+  return api.delete(`/api/transactions/${transactionId}`);
 };
 
 export const chatWithAI = async (messages) => {
@@ -129,8 +147,4 @@ export const chatWithAI = async (messages) => {
     },
     body: JSON.stringify({ messages })
   });
-};
-
-export const fetchBudgetSummary = () => {
-  return api.get('/api/budgets/summary');
 };

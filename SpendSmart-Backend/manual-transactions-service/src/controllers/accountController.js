@@ -54,7 +54,7 @@ exports.updateAccount = async (req, res) => {
   try {
     const userId = req.user.id;
     const accountId = req.params.id;
-    const { name, type, balance } = req.body;
+    const { name, type, balance, isHidden } = req.body;
 
     const account = await Account.findOne({ _id: accountId, userId });
     if (!account) {
@@ -64,6 +64,11 @@ exports.updateAccount = async (req, res) => {
     account.name = name || account.name;
     account.type = type || account.type;
     account.balance = balance || account.balance;
+    
+    // Only update isHidden if it's explicitly provided
+    if (isHidden !== undefined) {
+      account.isHidden = isHidden;
+    }
 
     const updatedAccount = await account.save();
     res.json(updatedAccount);

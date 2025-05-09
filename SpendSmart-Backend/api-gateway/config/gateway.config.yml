@@ -8,27 +8,33 @@ admin:
 
 apiEndpoints:
   authAPI:
-    paths: ['/api/auth/*']
+    paths: ["/api/auth/*"]
   usersAPI:
-    paths: ['/api/users/*']
-  transactionsAPI:
-    paths: ['/api/transactions/*']
+    paths: ["/api/users/*"]
+  # transactionsAPI:
+  #   paths: ["/api/transactions/*"]
+  manualTransactionsAPI:
+    paths: ["/api/transactions/*"]
+  accountsAPI:
+    paths: ["/api/accounts/*"]
   budgetsAPI:
-    paths: ['/api/budgets/*']
+    paths: ["/api/budgets/*"]
   savingsAPI:
-    paths: ['/api/savings/*']
+    paths: ["/api/savings/*"]
   aiAdvisorAPI:
-    paths: ['/api/ai-advisor/*']
+    paths: ["/api/ai-advisor/*"]
 
 serviceEndpoints:
   authService:
-    url: '${AUTH_SERVICE_URL}'
-  transactionsService:
-    url: '${TRANSACTIONS_SERVICE_URL}'
+    url: "${AUTH_SERVICE_URL}"
+  # transactionsService:
+  #   url: '${TRANSACTIONS_SERVICE_URL}'
+  manualTransactionsService:
+    url: "${MANUAL_TRANSACTIONS_SERVICE_URL}"
   budgetSavingsService:
-    url: '${BUDGET_SAVINGS_SERVICE_URL}'
+    url: "${BUDGET_SAVINGS_SERVICE_URL}"
   aiAdvisorService:
-    url: '${AI_ADVISOR_SERVICE_URL}'
+    url: "${AI_ADVISOR_SERVICE_URL}"
 
 policies:
   - cors
@@ -50,66 +56,94 @@ pipelines:
       - cors: {}
       - jwt:
           action:
-            secretOrPublicKey: '${JWT_SECRET}'
-            credentialsRequired: true        # require login
-            algorithms: ['HS256']
-            checkCredentialExistence: false  # still skip Consumer
+            secretOrPublicKey: "${JWT_SECRET}"
+            credentialsRequired: true # require login
+            algorithms: ["HS256"]
+            checkCredentialExistence: false # still skip Consumer
       - proxy:
           action:
             serviceEndpoint: authService
 
-  transactionsPipeline:
-    apiEndpoints: [transactionsAPI]
+  # transactionsPipeline:
+  #   apiEndpoints: [transactionsAPI]
+  #   policies:
+  #     - cors: {}
+  #     - jwt:
+  #         action:
+  #           secretOrPublicKey: "${JWT_SECRET}"
+  #           credentialsRequired: true # protect tx endpoints
+  #           algorithms: ["HS256"]
+  #           checkCredentialExistence: false # uncontrolled mode
+  #     - proxy:
+  #         action:
+  #           serviceEndpoint: transactionsService
+
+  manualTransactionsPipeline:
+    apiEndpoints: [manualTransactionsAPI]
     policies:
       - cors: {}
       - jwt:
           action:
-            secretOrPublicKey: '${JWT_SECRET}'
-            credentialsRequired: true        # protect tx endpoints
-            algorithms: ['HS256']
-            checkCredentialExistence: false  # uncontrolled mode
+            secretOrPublicKey: "${JWT_SECRET}"
+            credentialsRequired: true # protect tx endpoints
+            algorithms: ["HS256"]
+            checkCredentialExistence: false # uncontrolled mode
       - proxy:
           action:
-            serviceEndpoint: transactionsService
-            
+            serviceEndpoint: manualTransactionsService
+  
+  accountPipeline:
+    apiEndpoints: [accountsAPI]
+    policies:
+      - cors: {}
+      - jwt:
+          action:
+            secretOrPublicKey: "${JWT_SECRET}"
+            credentialsRequired: true # protect tx endpoints
+            algorithms: ["HS256"]
+            checkCredentialExistence: false # uncontrolled mode
+      - proxy:
+          action:
+            serviceEndpoint: manualTransactionsService
+
   budgetsPipeline:
     apiEndpoints: [budgetsAPI]
     policies:
       - cors: {}
       - jwt:
           action:
-            secretOrPublicKey: '${JWT_SECRET}'
-            credentialsRequired: true        # protect tx endpoints
-            algorithms: ['HS256']
-            checkCredentialExistence: false  # uncontrolled mode
+            secretOrPublicKey: "${JWT_SECRET}"
+            credentialsRequired: true # protect tx endpoints
+            algorithms: ["HS256"]
+            checkCredentialExistence: false # uncontrolled mode
       - proxy:
           action:
             serviceEndpoint: budgetSavingsService
-  
+
   savingsPipeline:
     apiEndpoints: [savingsAPI]
     policies:
       - cors: {}
       - jwt:
           action:
-            secretOrPublicKey: '${JWT_SECRET}'
-            credentialsRequired: true        # protect tx endpoints
-            algorithms: ['HS256']
-            checkCredentialExistence: false  # uncontrolled mode
+            secretOrPublicKey: "${JWT_SECRET}"
+            credentialsRequired: true # protect tx endpoints
+            algorithms: ["HS256"]
+            checkCredentialExistence: false # uncontrolled mode
       - proxy:
           action:
             serviceEndpoint: budgetSavingsService
-  
+
   aiAdvisorPipeline:
     apiEndpoints: [aiAdvisorAPI]
     policies:
       - cors: {}
       - jwt:
           action:
-            secretOrPublicKey: '${JWT_SECRET}'
-            credentialsRequired: true        # protect tx endpoints
-            algorithms: ['HS256']
-            checkCredentialExistence: false  # uncontrolled mode
+            secretOrPublicKey: "${JWT_SECRET}"
+            credentialsRequired: true # protect tx endpoints
+            algorithms: ["HS256"]
+            checkCredentialExistence: false # uncontrolled mode
       - proxy:
           action:
             serviceEndpoint: aiAdvisorService

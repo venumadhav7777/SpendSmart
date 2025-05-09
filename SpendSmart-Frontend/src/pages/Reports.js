@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Grid, Box, Typography, Button } from '@mui/material';
+import { Grid, Box, Typography, Button, CircularProgress, Alert } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
   AccountBalance as AccountBalanceIcon,
   Savings as SavingsIcon,
 } from '@mui/icons-material';
-import Card from '../components/Card';
+import { useTheme } from '@mui/material/styles';
 import {
   BarChart,
   Bar,
@@ -20,30 +20,75 @@ import {
   Cell,
   Legend
 } from 'recharts';
-import { fetchTransactionsFromDB, getBalance } from '../api';
+import { fetchTransactions, fetchAccounts } from '../api';
 import { motion } from 'framer-motion';
 import { exportReportsToPDF } from '../utils/pdfExport';
+import { useAuth } from '../contexts/AuthContext';
+import Card from '../components/Card';
 
 const COLORS = ['#2196F3', '#4CAF50', '#F44336', '#FFC107', '#9C27B0', '#00BCD4', '#10B981', '#3B82F6', '#14B8A6', '#34D399'];
 
+// Backend categories
+const BACKEND_CATEGORIES = [
+  'Income', 'Food', 'Transport', 'Shopping', 'Debt', 'Fees', 'Housing', 'Entertainment', 'Health', 'Travel', 'Personal', 'Subscriptions', 'Investments', 'Other'
+];
+
+const simplifyCategory = (category) => {
+  if (!category) return 'Other';
+  const map = {};
+  BACKEND_CATEGORIES.forEach(cat => { map[cat.toLowerCase()] = cat; });
+  return map[category.toLowerCase()] || 'Other';
+};
+
 const Reports = () => {
+  const theme = useTheme();
+  const { user } = useAuth();
   const [transactions, setTransactions] = useState([]);
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [accounts, setAccounts] = useState([]);
 
   useEffect(() => {
     async function loadData() {
       setLoading(true);
       try {
-        const txRes = await fetchTransactionsFromDB();
-        setTransactions(txRes.data.transactions || []);
-        const balRes = await getBalance();
-        setBalance(balRes.data.balance || 0);
+        const [txRes, accountsRes] = await Promise.all([
+          fetchTransactions(),
+          fetchAccounts()
+        ]);
+        const transactionsList = txRes.data || [];
+        const accountsList = accountsRes.data || [];
+        
+        // Only non-hidden accounts
+        const visibleAccounts = accountsList.filter(acc => !acc.isHidden);
+        const visibleAccountIds = new Set(visibleAccounts.map(acc => acc._id));
+        const visibleTransactions = transactionsList.filter(tx => visibleAccountIds.has(tx.accountId));
+        const totalBalance = visibleAccounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
+        
+        setTransactions(visibleTransactions);
+        setBalance(totalBalance);
+        setAccounts(visibleAccounts);
+      } catch (err) {
+        setError(err.message);
       } finally {
         setLoading(false);
       }
     }
     loadData();
+
+    // Add event listeners for data updates
+    const handleDataUpdate = () => {
+      loadData();
+    };
+
+    window.addEventListener('accountsUpdated', handleDataUpdate);
+    window.addEventListener('transactionsUpdated', handleDataUpdate);
+
+    return () => {
+      window.removeEventListener('accountsUpdated', handleDataUpdate);
+      window.removeEventListener('transactionsUpdated', handleDataUpdate);
+    };
   }, []);
 
   // Helper: get last 6 months
@@ -63,29 +108,32 @@ const Reports = () => {
   };
 
   // Compute monthly income/expenses for last 6 months
-  const monthlyData = (() => {
+  const getMonthlyTrendData = (transactions) => {
     const months = getLast6Months();
     const data = months.map(m => ({ name: m.label, income: 0, expenses: 0 }));
-  transactions.forEach(tx => {
-    const txDate = new Date(tx.date);
-    const txYear = txDate.getFullYear();
-    const txMonth = txDate.getMonth();
-    const idx = months.findIndex(m => m.year === txYear && m.month === txMonth);
-    if (idx !== -1) {
-      const primaryCategory = tx.mapped_category?.primary || 'OTHER';
-      if (primaryCategory === 'INCOME' || primaryCategory === 'TRANSFER_IN') {
-        data[idx].income += Math.abs(tx.amount);
-      } else {
-        data[idx].expenses += Math.abs(tx.amount);
+    transactions.forEach(tx => {
+      const txDate = new Date(tx.date);
+      const txYear = txDate.getFullYear();
+      const txMonth = txDate.getMonth();
+      const idx = months.findIndex(m => m.year === txYear && m.month === txMonth);
+      if (idx !== -1) {
+        if (tx.category && tx.category.toLowerCase() === 'income') {
+          data[idx].income += Math.abs(tx.amount);
+        } else {
+          data[idx].expenses += Math.abs(tx.amount);
+        }
       }
-    }
-  });
+    });
     return data;
-  })();
+  };
+
+  // Monthly trend data
+  const monthlyData = getMonthlyTrendData(transactions);
 
   // Compute savings rate for current month
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
   let currentIncome = 0, currentExpenses = 0;
   let lastMonthIncome = 0, lastMonthExpenses = 0;
   const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
@@ -97,10 +145,9 @@ const Reports = () => {
     const txYear = txDate.getFullYear();
     const isCurrentMonth = txMonth === currentMonth && txYear === currentYear;
     const isLastMonth = txMonth === lastMonth && txYear === lastMonthYear;
-
-    if (tx.amount > 0) {
-      if (isCurrentMonth) currentIncome += tx.amount;
-      if (isLastMonth) lastMonthIncome += tx.amount;
+    if (tx.category && tx.category.toLowerCase() === 'income') {
+      if (isCurrentMonth) currentIncome += Math.abs(tx.amount);
+      if (isLastMonth) lastMonthIncome += Math.abs(tx.amount);
     } else {
       const expenseAmount = Math.abs(tx.amount);
       if (isCurrentMonth) currentExpenses += expenseAmount;
@@ -109,68 +156,80 @@ const Reports = () => {
   });
 
   // Calculate savings rate from monthlyData for consistency
-  const currentMonthData = monthlyData.find(m => {
-    const now = new Date();
-    return m.name === now.toLocaleString('default', { month: 'short' });
-  }) || { income: 0, expenses: 0 };
-
-  const lastMonthData = monthlyData[monthlyData.length - 2] || { income: 0, expenses: 0 };
-
-  const savingsRate = currentMonthData.income ? ((currentMonthData.income - currentMonthData.expenses) / currentMonthData.income) * 100 : 0;
-  const lastMonthSavingsRate = lastMonthData.income ? ((lastMonthData.income - lastMonthData.expenses) / lastMonthData.income) * 100 : 0;
-  const savingsTrend = lastMonthSavingsRate ? ((savingsRate - lastMonthSavingsRate) / lastMonthSavingsRate) * 100 : 0;
+  const thisMonthIdx = monthlyData.length - 1;
+  const lastMonthIdx = monthlyData.length - 2;
+  const currentMonthData = monthlyData[thisMonthIdx] || { income: 0, expenses: 0 };
+  const lastMonthData = monthlyData[lastMonthIdx] || { income: 0, expenses: 0 };
+  const savingsRate = currentMonthData.income ? Number((((currentMonthData.income - currentMonthData.expenses) / currentMonthData.income) * 100).toFixed(1)) : 0;
+  const lastMonthSavingsRate = lastMonthData.income ? Number((((lastMonthData.income - lastMonthData.expenses) / lastMonthData.income) * 100).toFixed(1)) : 0;
+  const savingsTrend = lastMonthSavingsRate ? Number((((savingsRate - lastMonthSavingsRate) / lastMonthSavingsRate) * 100).toFixed(1)) : 0;
 
   // Compute trends for cards
-  const lastMonthIdx = monthlyData.length - 2;
-  const thisMonthIdx = monthlyData.length - 1;
-  const incomeTrend = lastMonthIdx >= 0 && monthlyData[lastMonthIdx].income ? 
-    ((monthlyData[thisMonthIdx].income - monthlyData[lastMonthIdx].income) / monthlyData[lastMonthIdx].income) * 100 : 0;
-  const expensesTrend = lastMonthIdx >= 0 && monthlyData[lastMonthIdx].expenses ? 
-    ((monthlyData[thisMonthIdx].expenses - monthlyData[lastMonthIdx].expenses) / monthlyData[lastMonthIdx].expenses) * 100 : 0;
+  const incomeTrend = lastMonthIdx >= 0 && lastMonthData.income ? 
+    Number((((currentMonthData.income - lastMonthData.income) / lastMonthData.income) * 100).toFixed(1)) : 0;
+  const expensesTrend = lastMonthIdx >= 0 && lastMonthData.expenses ? 
+    Number((((currentMonthData.expenses - lastMonthData.expenses) / lastMonthData.expenses) * 100).toFixed(1)) : 0;
 
-  // Calculate balance trend
-  const lastMonthBalance = monthlyData[lastMonthIdx]?.income - monthlyData[lastMonthIdx]?.expenses || 0;
-  const currentMonthBalance = monthlyData[thisMonthIdx]?.income - monthlyData[thisMonthIdx]?.expenses || 0;
-  const balanceTrend = lastMonthBalance ? ((currentMonthBalance - lastMonthBalance) / lastMonthBalance) * 100 : 0;
-
-  const simplifyCategory = (category) => {
-    const categoryMap = {
-      'FOOD_AND_DRINK': 'Food & Dining',
-      'GENERAL_MERCHANDISE': 'Shopping',
-      'TRANSPORTATION': 'Transportation',
-      'ENTERTAINMENT': 'Entertainment',
-      'BILLS_AND_UTILITIES': 'Bills & Utilities',
-      'HEALTHCARE': 'Health & Fitness',
-      'TRAVEL': 'Travel',
-      'PERSONAL_CARE': 'Personal Care',
-      'EDUCATION': 'Education',
-      'GIFTS_AND_DONATIONS': 'Gifts & Donations',
-      'LOAN_PAYMENTS': 'Debt',
-      'BANK_FEES': 'Fees',
-      'INVESTMENTS': 'Investments',
-      'OTHER': 'Other'
-    };
-    return categoryMap[category] || 'Other';
+  // Calculate balance trend by comparing current month's balance with last month's balance
+  const getMonthlyBalance = (transactions, month, year) => {
+    let balance = 0;
+    transactions.forEach(tx => {
+      const txDate = new Date(tx.date);
+      if (txDate.getMonth() === month && txDate.getFullYear() === year) {
+        balance += tx.amount;
+      }
+    });
+    return balance;
   };
 
-  // Compute spending by category for current month
-  const categoryTotals = {};
-  let totalSpending = 0;
-  transactions.forEach(tx => {
-    const txDate = new Date(tx.date);
-    const primaryCategory = tx.mapped_category?.primary || 'OTHER';
-    if (primaryCategory !== 'INCOME' && primaryCategory !== 'TRANSFER_IN' &&
-        txDate.getMonth() === currentMonth && 
-        txDate.getFullYear() === currentYear) {
-      const originalCategory = primaryCategory;
-      const simplifiedCategory = simplifyCategory(originalCategory);
-      const amount = Math.abs(tx.amount);
-      
-      categoryTotals[simplifiedCategory] = (categoryTotals[simplifiedCategory] || 0) + amount;
-      totalSpending += amount;
-    }
-  });
+  const currentMonthBalance = getMonthlyBalance(transactions, currentMonth, currentYear);
+  const lastMonthBalance = getMonthlyBalance(transactions, lastMonth, lastMonthYear);
+  const balanceTrend = lastMonthBalance ? Number((((currentMonthBalance - lastMonthBalance) / Math.abs(lastMonthBalance)) * 100).toFixed(1)) : 0;
 
+  // Compute spending by category for current month
+  const getSpendingByCategory = (transactions) => {
+    const categoryTotals = {};
+    let totalSpending = 0;
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Define category groups
+    const categoryGroups = {
+      'Essentials': ['Food', 'Transport', 'Housing', 'Health'],
+      'Lifestyle': ['Entertainment', 'Shopping', 'Personal', 'Travel'],
+      'Financial': ['Debt', 'Fees', 'Investments'],
+      'Subscriptions': ['Subscriptions'],
+      'Other': ['Other']
+    };
+
+    transactions.forEach(tx => {
+      const txDate = new Date(tx.date);
+      if (
+        tx.category &&
+        tx.category.toLowerCase() !== 'income' &&
+        txDate.getMonth() === currentMonth &&
+        txDate.getFullYear() === currentYear
+      ) {
+        // Find which group this category belongs to
+        let groupName = 'Other';
+        for (const [group, categories] of Object.entries(categoryGroups)) {
+          if (categories.includes(tx.category)) {
+            groupName = group;
+            break;
+          }
+        }
+
+        const amount = Math.abs(tx.amount);
+        categoryTotals[groupName] = (categoryTotals[groupName] || 0) + amount;
+        totalSpending += amount;
+      }
+    });
+    return { categoryTotals, totalSpending };
+  };
+
+  // Spending by category
+  const { categoryTotals, totalSpending } = getSpendingByCategory(transactions);
   const spendingData = Object.entries(categoryTotals).map(([name, value], i) => ({
     name,
     value,
@@ -181,70 +240,88 @@ const Reports = () => {
   const formatCurrency = (amount) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
   const formatPercentage = (value) => `${value.toFixed(1)}%`;
 
+  const handleExportPDF = () => {
+    exportReportsToPDF({
+      balance,
+      monthlyData,
+      savingsRate,
+      spendingData,
+      detailedSpendingData: spendingData.map(s => ({
+        name: s.name,
+        value: s.value,
+        percentage: (s.value / spendingData.reduce((acc, cur) => acc + cur.value, 0)) * 100
+      }))
+    });
+  };
+
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 4 }}>
-        Financial Reports
-      </Typography>
-      <Button variant="contained" sx={{ mb: 2 }} onClick={() => exportReportsToPDF({
-        balance,
-        monthlyData,
-        savingsRate,
-        spendingData,
-        detailedSpendingData: spendingData.map(s => ({
-          name: s.name,
-          value: s.value,
-          percentage: (s.value / spendingData.reduce((acc, cur) => acc + cur.value, 0)) * 100
-        }))
-      })}>
-        Export to PDF
-      </Button>
-      <Grid container spacing={3}>
-        <Grid item xs={12} sm={6} md={3}>
-          <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.7, ease: 'easeOut' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography variant="h4">Reports</Typography>
+        <Button
+          variant="outlined"
+          onClick={handleExportPDF}
+          sx={{
+            borderRadius: 2,
+            textTransform: 'none',
+            px: 3,
+            py: 1,
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: 3
+            },
+            transition: 'all 0.3s ease'
+          }}
+        >
+          Export to PDF
+        </Button>
+      </Box>
+
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+          <CircularProgress />
+        </Box>
+      ) : error ? (
+        <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+      ) : (
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6} md={3}>
             <Card
               title="Total Balance"
               value={formatCurrency(balance)}
-              icon={<AccountBalanceIcon />}
+              icon={<AccountBalanceIcon sx={{ fontSize: 32 }} />}
               color="#2196F3"
             />
-          </motion.div>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.7, ease: 'easeOut' }}>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
             <Card
               title="Monthly Income"
               value={formatCurrency(monthlyData[thisMonthIdx]?.income || 0)}
-              icon={<TrendingUpIcon />}
+              icon={<TrendingUpIcon sx={{ fontSize: 32 }} />}
               color="#4CAF50"
-              trend={{ value: Math.round(incomeTrend * 10) / 10, label: 'vs last month' }}
+              trend={{ value: incomeTrend, label: 'vs last month' }}
             />
-          </motion.div>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.7, ease: 'easeOut' }}>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
             <Card
               title="Monthly Expenses"
               value={formatCurrency(monthlyData[thisMonthIdx]?.expenses || 0)}
-              icon={<TrendingDownIcon />}
+              icon={<TrendingDownIcon sx={{ fontSize: 32 }} />}
               color="#F44336"
-              trend={{ value: Math.round(expensesTrend * 10) / 10, label: 'vs last month' }}
+              trend={{ value: expensesTrend, label: 'vs last month' }}
             />
-          </motion.div>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.7, ease: 'easeOut' }}>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
             <Card
               title="Savings Rate"
               value={formatPercentage(savingsRate)}
-              icon={<SavingsIcon />}
+              icon={<SavingsIcon sx={{ fontSize: 32 }} />}
               color="#00BCD4"
-              trend={{ value: Math.round(savingsTrend * 10) / 10, label: 'vs last month' }}
+              trend={{ value: savingsTrend, label: 'vs last month' }}
             />
-          </motion.div>
-        </Grid>
-        <Grid item xs={12} md={8}>
-          <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.7, ease: 'easeOut' }}>
+          </Grid>
+
+          <Grid item xs={12} md={8}>
             <Card
               title="Income vs Expenses"
               subtitle="Last 6 months"
@@ -290,10 +367,9 @@ const Reports = () => {
                 </ResponsiveContainer>
               </Box>
             </Card>
-          </motion.div>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.7, ease: 'easeOut' }}>
+          </Grid>
+
+          <Grid item xs={12} md={4}>
             <Card
               title="Spending by Category"
               subtitle="Current month"
@@ -319,7 +395,7 @@ const Reports = () => {
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           const data = payload[0].payload;
-                          const percent = ((data.value / totalSpending) * 100).toFixed(1);
+                          const percent = Number(((data.value / totalSpending) * 100).toFixed(1));
                           return (
                             <Box sx={{ 
                               bgcolor: 'background.paper', 
@@ -348,10 +424,9 @@ const Reports = () => {
                 </ResponsiveContainer>
               </Box>
             </Card>
-          </motion.div>
-        </Grid>
-        <Grid item xs={12}>
-          <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.7, ease: 'easeOut' }}>
+          </Grid>
+
+          <Grid item xs={12}>
             <Card
               title="Detailed Spending Analysis"
               subtitle="Current month breakdown"
@@ -373,6 +448,11 @@ const Reports = () => {
                         p: 2,
                         borderRadius: 2,
                         backgroundColor: 'background.default',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: 1
+                        }
                       }}
                     >
                       <Box
@@ -391,15 +471,15 @@ const Reports = () => {
                         </Typography>
                       </Box>
                       <Typography variant="subtitle1" color="text.secondary">
-                        {((category.value / totalSpending) * 100).toFixed(1)}%
+                        {Number(((category.value / totalSpending) * 100).toFixed(1))}%
                       </Typography>
                     </Box>
                   ))}
               </Box>
             </Card>
-          </motion.div>
+          </Grid>
         </Grid>
-      </Grid>
+      )}
     </Box>
   );
 };

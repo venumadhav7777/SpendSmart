@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Alert, IconButton, CircularProgress, LinearProgress } from '@mui/material';
+import { Typography, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Alert, IconButton, CircularProgress, LinearProgress, Grid, Card, CardContent, InputAdornment } from '@mui/material';
 import { fetchSavings, createSavings, deleteSavings, updateSavings } from '../api';
 import SectionCard from '../components/SectionCard';
-import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Delete as DeleteIcon, Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
 
 function Savings() {
   const [savings, setSavings] = useState([]);
@@ -208,137 +208,214 @@ function Savings() {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#4a90e2' }}>
-        Savings Goals
-      </Typography>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      <Button variant="contained" onClick={handleOpen} sx={{ mb: 3 }} disabled={loading}>
-        Add Savings Goal
-      </Button>
-      {loading && <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}><CircularProgress /></Box>}
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>Add New Savings Goal</DialogTitle>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography variant="h4">Savings Goals</Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          onClick={handleOpen}
+        >
+          Add Goal
+        </Button>
+      </Box>
+
+      <Grid container spacing={3}>
+        {savings.map((goal) => (
+          <Grid item xs={12} sm={6} md={4} key={goal._id}>
+            <Card sx={{ 
+              height: '100%', 
+              bgcolor: 'background.paper',
+              transition: 'background-color 0.3s ease'
+            }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6" component="div">
+                    {goal.name}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleEditOpen(goal)}
+                    sx={{ color: 'text.secondary' }}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                </Box>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Target: {formatCurrency(goal.target)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Current: {formatCurrency(goal.saved || 0)}
+                </Typography>
+                <Box sx={{ mt: 2 }}>
+                  <LinearProgress
+                    variant="determinate"
+                    value={(goal.saved || 0) / goal.target * 100}
+                    color="primary"
+                    sx={{
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: 'action.hover',
+                    }}
+                  />
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 1, textAlign: 'right' }}
+                  >
+                    {((goal.saved || 0) / goal.target * 100).toFixed(1)}%
+                  </Typography>
+                </Box>
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Target Date: {new Date(goal.deadline).toLocaleDateString()}
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => handleEditOpen(goal)}
+                    sx={{ color: 'primary.main' }}
+                  >
+                    Edit
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: 'background.paper',
+            transition: 'background-color 0.3s ease'
+          }
+        }}
+      >
+        <DialogTitle>
+          {editOpen ? 'Edit Goal' : 'Add Goal'}
+        </DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            name="name"
-            label="Goal Name"
-            type="text"
-            fullWidth
-            value={formData.name}
-            onChange={handleChange}
-            error={!!errors.name}
-            helperText={errors.name}
-            disabled={loading}
-          />
-          <TextField
-            margin="dense"
-            name="target"
-            label="Target Amount"
-            type="number"
-            fullWidth
-            value={formData.target}
-            onChange={handleChange}
-            error={!!errors.target}
-            helperText={errors.target}
-            InputProps={{
-              startAdornment: '₹'
-            }}
-            disabled={loading}
-          />
-          <TextField
-            margin="dense"
-            name="deadline"
-            label="Deadline"
-            type="date"
-            fullWidth
-            value={formData.deadline}
-            onChange={handleChange}
-            error={!!errors.deadline}
-            helperText={errors.deadline}
-            InputLabelProps={{
-              shrink: true,
-            }}
-            disabled={loading}
-          />
-          <TextField
-            margin="dense"
-            name="description"
-            label="Description"
-            type="text"
-            fullWidth
-            value={formData.description}
-            onChange={handleChange}
-            error={!!errors.description}
-            helperText={errors.description}
-            disabled={loading}
-          />
+          <Box sx={{ pt: 2 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Goal Name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  error={!!errors.name}
+                  helperText={errors.name}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Target Amount"
+                  type="number"
+                  value={formData.target}
+                  onChange={handleChange}
+                  error={!!errors.target}
+                  helperText={errors.target}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Deadline"
+                  type="date"
+                  value={formData.deadline}
+                  onChange={handleChange}
+                  error={!!errors.deadline}
+                  helperText={errors.deadline}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  error={!!errors.description}
+                  helperText={errors.description}
+                />
+              </Grid>
+            </Grid>
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} disabled={loading}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained" disabled={loading}>Create</Button>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            color="primary"
+            disabled={loading}
+          >
+            {loading ? 'Saving...' : 'Save'}
+          </Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={editOpen} onClose={handleEditClose}>
-        <DialogTitle>Update Savings Goal</DialogTitle>
+      <Dialog
+        open={editOpen}
+        onClose={handleEditClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: 'background.paper',
+            transition: 'background-color 0.3s ease'
+          }
+        }}
+      >
+        <DialogTitle>
+          Edit Goal
+        </DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            name="saved"
-            label="Saved Amount"
-            type="number"
-            fullWidth
-            value={editData.saved}
-            onChange={handleEditChange}
-            error={!!errors.saved}
-            helperText={errors.saved}
-            InputProps={{
-              startAdornment: '₹'
-            }}
-            disabled={loading}
-          />
+          <Box sx={{ pt: 2 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Saved Amount"
+                  type="number"
+                  value={editData.saved}
+                  onChange={handleEditChange}
+                  error={!!errors.saved}
+                  helperText={errors.saved}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                  }}
+                />
+              </Grid>
+            </Grid>
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleEditClose} disabled={loading}>Cancel</Button>
-          <Button onClick={handleUpdate} variant="contained" disabled={loading}>Update</Button>
+          <Button onClick={handleEditClose}>Cancel</Button>
+          <Button
+            onClick={handleUpdate}
+            variant="contained"
+            color="primary"
+            disabled={loading}
+          >
+            {loading ? 'Updating...' : 'Update'}
+          </Button>
         </DialogActions>
       </Dialog>
 
-      {savings.length === 0 && !error && !loading && (
-        <Typography variant="body1" color="text.secondary">
-          No savings goals found.
-        </Typography>
-      )}
-      {savings.map((saving) => {
-        const progress = saving.target > 0 ? Math.min((saving.saved || 0) / saving.target * 100, 100) : 0;
-        return (
-          <SectionCard key={saving._id} sx={{ mb: 3, position: 'relative' }}>
-            <Typography variant="h6" gutterBottom>{saving.name}</Typography>
-            <Typography variant="body1" gutterBottom>Target: {formatCurrency(saving.target)}</Typography>
-            <Typography variant="body1" gutterBottom>Current: {formatCurrency(saving.saved || 0)}</Typography>
-            <Typography variant="body1" gutterBottom>Deadline: {new Date(saving.deadline).toLocaleDateString()}</Typography>
-            {saving.description && (
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                {saving.description}
-              </Typography>
-            )}
-            <Box sx={{ width: '100%', mb: 1 }}>
-              <LinearProgress variant="determinate" value={progress} />
-            </Box>
-            <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 1 }}>
-              <IconButton size="small" color="primary" onClick={() => handleEditOpen(saving)} disabled={loading}>
-                <EditIcon />
-              </IconButton>
-              <IconButton size="small" color="error" onClick={() => handleDelete(saving._id)} disabled={loading}>
-                <DeleteIcon />
-              </IconButton>
-            </Box>
-          </SectionCard>
-        );
-      })}
+      {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
     </Box>
   );
 }

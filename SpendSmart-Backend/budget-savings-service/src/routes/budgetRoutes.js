@@ -6,7 +6,8 @@ const {
     getBudgets,
     updateBudget,
     deleteBudget,
-    getBudgetSummary
+    getBudgetSummary,
+    getBudgetSummaryWithTransactions
 } = require('../controllers/budgetController');
 const { protect } = require('../middlewares/authMiddleware');
 
@@ -16,5 +17,6 @@ router.get('', getBudgets);
 router.put('/:budgetId', updateBudget);
 router.delete('/:budgetId', deleteBudget);
 router.get('/summary', getBudgetSummary);
+router.get('/summary/transactions', getBudgetSummaryWithTransactions);
 
 module.exports = router;

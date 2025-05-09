@@ -24,38 +24,38 @@ services:
     # volumes:
     #   - ./auth-service:/app
     
-  transactions-service:
-    build: ./transactions-service
-    container_name: transactions-service
-    ports:
-      - "3002:3002"
-    environment:
-      - MONGODB_URI=mongodb://mongo:27017/spendsmart_transactions
-      - PORT=3002
-      - JWT_SECRET=supersecretkey123456789
-      - PLAID_CLIENT_ID=6811b0c8ae79ac0022b608ea
-      - PLAID_SECRET=59f9af53807fde9ae4a08673035004
-      - PLAID_ENV=sandbox
-      - EXCHANGE_RATE_API_KEY=3718334aed30702bc6f102a1
-    networks:
-      - spendsmart-net
-    # volumes:
-    #   - ./transactions-service:/app
+  # transactions-service:
+  #   build: ./transactions-service
+  #   container_name: transactions-service
+  #   ports:
+  #     - "3002:3002"
+  #   environment:
+  #     - MONGODB_URI=mongodb://mongo:27017/spendsmart_transactions
+  #     - PORT=3002
+  #     - JWT_SECRET=supersecretkey123456789
+  #     - PLAID_CLIENT_ID=6811b0c8ae79ac0022b608ea
+  #     - PLAID_SECRET=59f9af53807fde9ae4a08673035004
+  #     - PLAID_ENV=sandbox
+  #     - EXCHANGE_RATE_API_KEY=3718334aed30702bc6f102a1
+  #   networks:
+  #     - spendsmart-net
+  #   # volumes:
+  #   #   - ./transactions-service:/app
 
-  expense-service:
-    build: ./expense-service
-    container_name: expense-service
+  manual-transactions-service:
+    build: ./manual-transactions-service
+    container_name: manual-transactions-service
     ports:
       - "3005:3005"
     environment:
-      - MONGODB_URI=mongodb://mongo:27017/spendsmart_transactions
+      - MONGODB_URI=mongodb://mongo:27017/spendsmart_expense
       - PORT=3005
       - JWT_SECRET=supersecretkey123456789
       - EXCHANGE_RATE_API_KEY=3718334aed30702bc6f102a1
     networks:
       - spendsmart-net
     # volumes:
-    #   - ./expense-service:/app
+    #   - ./manual-transactions-service:/app
     
   budget-savings-service:
     build: ./budget-savings-service
@@ -71,7 +71,7 @@ services:
       - SMTP_USER=naveenkumarskht77@gmail.com
       - SMTP_PASS=uplmuqqhphhjdhsk
       - AUTH_SERVICE_URL=http://auth-service:3001
-      - TRANSACTIONS_SERVICE_URL=http://transactions-service:3002
+      - MANUAL_TRANSACTIONS_SERVICE_URL=http://manual-transactions-service:3005
     networks:
       - spendsmart-net
     # volumes:
@@ -84,13 +84,15 @@ services:
       - "9876:9876"       
     depends_on:
       - auth-service
-      - transactions-service
+      # - transactions-service
+      - manual-transactions-service
       - budget-savings-service
       - ai-advisor-service
     environment:
       - JWT_SECRET=supersecretkey123456789
       - AUTH_SERVICE_URL=http://auth-service:3001
-      - TRANSACTIONS_SERVICE_URL=http://transactions-service:3002
+      - MANUAL_TRANSACTIONS_SERVICE_URL=http://manual-transactions-service:3005
+      # - TRANSACTIONS_SERVICE_URL=http://transactions-service:3002
       - BUDGET_SAVINGS_SERVICE_URL=http://budget-savings-service:3003
       - AI_ADVISOR_SERVICE_URL=http://ai-advisor-service:3004
     networks:

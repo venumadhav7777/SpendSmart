@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Typography, Box, TextField, Button, Alert, Link } from '@mui/material';
-import { login, createPublicToken, exchangePublicToken } from '../api';
+import { login } from '../api';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import SectionCard from '../components/SectionCard';
-import handleFetchTransactions from './Transactions';
+
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -29,15 +29,7 @@ function Login() {
       // Store user data and token in AuthContext
       authLogin({ _id, name, email: userEmail, role }, token);
       
-      // Create and exchange public token after successful login
-      try {
-        await createPublicToken();
-        await exchangePublicToken();
-        await handleFetchTransactions();
-      } catch (tokenError) {
-        console.error('Error with token creation/exchange:', tokenError);
-        // Continue with navigation even if token creation fails
-      }
+      // Login successful
       
       // Navigate to the page they were trying to access, or dashboard
       navigate(from, { replace: true });

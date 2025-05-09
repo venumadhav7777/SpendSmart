@@ -18,7 +18,8 @@ const savingsSchema = new mongoose.Schema({
   saved:         { type: Number, default: 0 },
   deadline:      { type: Date },
   ownerMail:     { type: String, required: true },
-  contributions: { type: [contributionSchema], default: [] }  // subdocument array :contentReference[oaicite:1]{index=1}
+  contributions: { type: [contributionSchema], default: [] },  // subdocument array :contentReference[oaicite:1]{index=1}
+  goalReachedNotified: { type: Boolean, default: false }  // Track if goal completion email was sent
 }, { timestamps: true });
 
 module.exports = mongoose.model('SavingsGoal', savingsSchema);
