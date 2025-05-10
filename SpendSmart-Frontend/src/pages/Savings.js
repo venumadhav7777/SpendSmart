@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Alert, IconButton, CircularProgress, LinearProgress, Grid, Card, CardContent, InputAdornment } from '@mui/material';
+import { Typography, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Alert, IconButton, CircularProgress, LinearProgress, Grid, Card, CardContent, InputAdornment, Chip, DialogContentText } from '@mui/material';
 import { fetchSavings, createSavings, deleteSavings, updateSavings } from '../api';
 import SectionCard from '../components/SectionCard';
 import { Delete as DeleteIcon, Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
@@ -19,8 +19,13 @@ function Savings() {
   });
   const [editData, setEditData] = useState({
     goalId: '',
-    saved: ''
+    saved: '',
+    target: '',
+    name: '',
+    deadline: ''
   });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [goalToDelete, setGoalToDelete] = useState(null);
 
   useEffect(() => {
     loadSavings();
@@ -64,7 +69,10 @@ function Savings() {
   const handleEditOpen = (saving) => {
     setEditData({
       goalId: saving._id,
-      saved: saving.saved || 0
+      saved: saving.saved || 0,
+      target: saving.target,
+      name: saving.name,
+      deadline: saving.deadline
     });
     setEditOpen(true);
     setError('');
@@ -75,7 +83,10 @@ function Savings() {
     setEditOpen(false);
     setEditData({
       goalId: '',
-      saved: ''
+      saved: '',
+      target: '',
+      name: '',
+      deadline: ''
     });
     setError('');
     setErrors({});
@@ -95,15 +106,16 @@ function Savings() {
   };
 
   const handleEditChange = (e) => {
-    setEditData({
-      ...editData,
-      [e.target.name]: e.target.value
-    });
-    if (errors[e.target.name]) {
-      setErrors({
-        ...errors,
-        [e.target.name]: undefined
-      });
+    const { name, value } = e.target;
+    setEditData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: undefined
+      }));
     }
   };
 
@@ -117,7 +129,13 @@ function Savings() {
 
   const validateEditForm = () => {
     const newErrors = {};
-    if (editData.saved === '' || isNaN(parseFloat(editData.saved))) newErrors.saved = 'Valid saved amount is required';
+    if (editData.saved === '' || isNaN(parseFloat(editData.saved))) {
+      newErrors.saved = 'Valid saved amount is required';
+    } else if (parseFloat(editData.saved) < 0) {
+      newErrors.saved = 'Saved amount cannot be negative';
+    } else if (parseFloat(editData.saved) > parseFloat(editData.target)) {
+      newErrors.saved = 'Saved amount cannot exceed target amount';
+    }
     return newErrors;
   };
 
@@ -153,10 +171,22 @@ function Savings() {
     }
   };
 
-  const handleDelete = async (goalId) => {
+  const handleDeleteClick = (goal) => {
+    setGoalToDelete(goal);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteClose = () => {
+    setDeleteDialogOpen(false);
+    setGoalToDelete(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!goalToDelete) return;
     setLoading(true);
     try {
-      await deleteSavings(goalId);
+      await deleteSavings(goalToDelete._id);
+      handleDeleteClose();
       loadSavings();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to delete savings goal');
@@ -176,7 +206,8 @@ function Savings() {
       setError('');
       setErrors({});
       const response = await updateSavings(editData.goalId, {
-        saved: parseFloat(editData.saved)
+        saved: parseFloat(editData.saved),
+        deadline: editData.deadline ? new Date(editData.deadline).toISOString() : undefined
       });
       if (response.status === 200) {
         handleEditClose();
@@ -206,6 +237,24 @@ function Savings() {
     }).format(amount);
   };
 
+  const isGoalExpired = (deadline) => {
+    return new Date(deadline) < new Date();
+  };
+
+  const isGoalCompleted = (saved, target) => {
+    return parseFloat(saved) >= parseFloat(target);
+  };
+
+  const getGoalStatus = (goal) => {
+    if (isGoalCompleted(goal.saved, goal.target)) {
+      return { color: 'success', label: 'Completed' };
+    }
+    if (isGoalExpired(goal.deadline)) {
+      return { color: 'error', label: 'Expired' };
+    }
+    return { color: 'primary', label: 'In Progress' };
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
@@ -221,68 +270,82 @@ function Savings() {
       </Box>
 
       <Grid container spacing={3}>
-        {savings.map((goal) => (
-          <Grid item xs={12} sm={6} md={4} key={goal._id}>
-            <Card sx={{ 
-              height: '100%', 
-              bgcolor: 'background.paper',
-              transition: 'background-color 0.3s ease'
-            }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6" component="div">
-                    {goal.name}
+        {savings.map((goal) => {
+          const status = getGoalStatus(goal);
+          return (
+            <Grid item xs={12} sm={6} md={4} key={goal._id}>
+              <Card sx={{ 
+                height: '100%', 
+                bgcolor: 'background.paper',
+                transition: 'background-color 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: 3
+                }
+              }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6" component="div">
+                      {goal.name}
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Chip
+                        label={status.label}
+                        color={status.color}
+                        size="small"
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteClick(goal)}
+                        sx={{ color: 'error.main' }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Target: {formatCurrency(goal.target)}
                   </Typography>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleEditOpen(goal)}
-                    sx={{ color: 'text.secondary' }}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                </Box>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Target: {formatCurrency(goal.target)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Current: {formatCurrency(goal.saved || 0)}
-                </Typography>
-                <Box sx={{ mt: 2 }}>
-                  <LinearProgress
-                    variant="determinate"
-                    value={(goal.saved || 0) / goal.target * 100}
-                    color="primary"
-                    sx={{
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: 'action.hover',
-                    }}
-                  />
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mt: 1, textAlign: 'right' }}
-                  >
-                    {((goal.saved || 0) / goal.target * 100).toFixed(1)}%
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Current: {formatCurrency(goal.saved || 0)}
                   </Typography>
-                </Box>
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Target Date: {new Date(goal.deadline).toLocaleDateString()}
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => handleEditOpen(goal)}
-                    sx={{ color: 'primary.main' }}
-                  >
-                    Edit
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
+                  <Box sx={{ mt: 2 }}>
+                    <LinearProgress
+                      variant="determinate"
+                      value={(goal.saved || 0) / goal.target * 100}
+                      color={status.color}
+                      sx={{
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: 'action.hover',
+                      }}
+                    />
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mt: 1, textAlign: 'right' }}
+                    >
+                      {((goal.saved || 0) / goal.target * 100).toFixed(1)}%
+                    </Typography>
+                  </Box>
+                  <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Target Date: {new Date(goal.deadline).toLocaleDateString()}
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleEditOpen(goal)}
+                      sx={{ color: 'primary.main' }}
+                    >
+                      Edit
+                    </Button>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          );
+        })}
       </Grid>
 
       <Dialog
@@ -307,6 +370,7 @@ function Savings() {
                 <TextField
                   fullWidth
                   label="Goal Name"
+                  name="name"
                   value={formData.name}
                   onChange={handleChange}
                   error={!!errors.name}
@@ -317,6 +381,7 @@ function Savings() {
                 <TextField
                   fullWidth
                   label="Target Amount"
+                  name="target"
                   type="number"
                   value={formData.target}
                   onChange={handleChange}
@@ -331,6 +396,7 @@ function Savings() {
                 <TextField
                   fullWidth
                   label="Deadline"
+                  name="deadline"
                   type="date"
                   value={formData.deadline}
                   onChange={handleChange}
@@ -345,6 +411,7 @@ function Savings() {
                 <TextField
                   fullWidth
                   label="Description"
+                  name="description"
                   value={formData.description}
                   onChange={handleChange}
                   error={!!errors.description}
@@ -380,16 +447,23 @@ function Savings() {
         }}
       >
         <DialogTitle>
-          Edit Goal
+          Edit Savings Goal
         </DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              {editData.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              Target: {formatCurrency(editData.target)}
+            </Typography>
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <TextField
                   fullWidth
                   label="Saved Amount"
                   type="number"
+                  name="saved"
                   value={editData.saved}
                   onChange={handleEditChange}
                   error={!!errors.saved}
@@ -397,6 +471,20 @@ function Savings() {
                   InputProps={{
                     startAdornment: <InputAdornment position="start">₹</InputAdornment>,
                   }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="New Deadline"
+                  type="date"
+                  name="deadline"
+                  value={editData.deadline ? new Date(editData.deadline).toISOString().split('T')[0] : ''}
+                  onChange={handleEditChange}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  helperText="Extend the deadline if needed"
                 />
               </Grid>
             </Grid>
@@ -411,6 +499,35 @@ function Savings() {
             disabled={loading}
           >
             {loading ? 'Updating...' : 'Update'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteClose}
+        PaperProps={{
+          sx: {
+            bgcolor: 'background.paper',
+            transition: 'background-color 0.3s ease'
+          }
+        }}
+      >
+        <DialogTitle>Delete Savings Goal</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this savings goal? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteClose}>Cancel</Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+            disabled={loading}
+          >
+            {loading ? 'Deleting...' : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -14,6 +14,7 @@ import Savings from './pages/Savings';
 import Reports from './pages/Reports';
 import AIAdvisor from './pages/AIAdvisor';
 import Settings from './pages/Settings';
+import FinancialSchemes from './pages/FinancialSchemes';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function AppRoutes() {
@@ -38,6 +39,7 @@ function AppRoutes() {
         <Route path="/transactions" element={<Transactions />} />
         <Route path="/budgets" element={<Budgets />} />
         <Route path="/savings" element={<Savings />} />
+        <Route path="/schemes" element={<FinancialSchemes />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/ai-advisor" element={<AIAdvisor />} />
         <Route path="/settings" element={<Settings />} />

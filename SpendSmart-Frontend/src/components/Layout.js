@@ -32,6 +32,7 @@ import {
   ChevronLeft as ChevronLeftIcon,
   Person as PersonIcon,
   Logout as LogoutIcon,
+  CardGiftcard as SchemesIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -44,6 +45,7 @@ const menuItems = [
   { text: 'Transactions', icon: <TransactionsIcon />, path: '/transactions' },
   { text: 'Budgets', icon: <SavingsIcon />, path: '/budgets' },
   { text: 'Savings Goals', icon: <SavingsIcon />, path: '/savings' },
+  { text: 'Financial Schemes', icon: <SchemesIcon />, path: '/schemes' },
   { text: 'Reports', icon: <ReportsIcon />, path: '/reports' },
   { text: 'AI Advisor', icon: <AIAdvisorIcon />, path: '/ai-advisor' },
 ];

@@ -60,25 +60,33 @@ exports.updateGoal = async (req, res) => {
     try {
         const { id: authUser, email } = req.user;
         const { goalId } = req.params;
-        const { saved: newSavedValue } = req.body;
+        const { saved: newSavedValue, deadline } = req.body;
 
-        // Find and update the saved total
+        // Find and update the goal
         const goal = await SavingsGoal.findOne({ _id: goalId, authUser });
         if (!goal) return res.status(404).json({ message: 'Goal not found' });
 
-        const contributionAmount = newSavedValue - goal.saved;
-        if (contributionAmount > 0) {
-            // 1) update the total saved
-            goal.saved = newSavedValue;
-
-            // 2) record the contribution
-            goal.contributions.push({
-                amount: contributionAmount,
-                type: 'manual'
-            });
-
-            await goal.save();
+        // Update deadline if provided
+        if (deadline) {
+            goal.deadline = new Date(deadline);
         }
+
+        // Update saved amount if provided
+        if (newSavedValue !== undefined) {
+            const contributionAmount = newSavedValue - goal.saved;
+            if (contributionAmount > 0) {
+                // 1) update the total saved
+                goal.saved = newSavedValue;
+
+                // 2) record the contribution
+                goal.contributions.push({
+                    amount: contributionAmount,
+                    type: 'manual'
+                });
+            }
+        }
+
+        await goal.save();
 
         // 3) send congrats if reached and not already notified
         if (goal.saved >= goal.target && !goal.goalReachedNotified) {

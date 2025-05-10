@@ -15,11 +15,12 @@ function Budgets() {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [newBudget, setNewBudget] = useState({
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState({
     name: '',
     category: '',
     limit: '',
-    period: 'monthly' // default to monthly
+    period: 'monthly'
   });
 
   const [editingBudgetId, setEditingBudgetId] = useState(null);
@@ -57,9 +58,9 @@ function Budgets() {
 
   const getBudgetStatus = (budget) => {
     const percentage = (budget.spent / budget.limit) * 100;
-    if (percentage >= 100) return { color: theme.palette.error.main, icon: <WarningIcon color="error" /> };
-    if (percentage >= 80) return { color: theme.palette.warning.main, icon: <WarningIcon color="warning" /> };
-    return { color: theme.palette.success.main, icon: <CheckCircleIcon color="success" /> };
+    if (percentage >= 100) return { color: 'error', icon: <WarningIcon color="error" /> };
+    if (percentage >= 80) return { color: 'warning', icon: <WarningIcon color="warning" /> };
+    return { color: 'success', icon: <CheckCircleIcon color="success" /> };
   };
 
   const loadBudgets = async () => {
@@ -75,22 +76,52 @@ function Budgets() {
     }
   };
 
+  const handleOpen = () => {
+    setOpen(true);
+    setError('');
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setFormData({
+      name: '',
+      category: '',
+      limit: '',
+      period: 'monthly'
+    });
+    setError('');
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   const handleCreateBudget = async () => {
-    if (!newBudget.name || !newBudget.category || !newBudget.limit || !newBudget.period) {
+    if (!formData.name || !formData.category || !formData.limit || !formData.period) {
       setError('Please fill in all fields');
       return;
     }
-    const budgetData = {
-      ...newBudget,
-      limit: parseFloat(newBudget.limit)
-    };
-    setError('');
+    setLoading(true);
     try {
-      await createBudget(budgetData);
-      setNewBudget({ name: '', category: '', limit: '', period: 'monthly' });
-      loadBudgets();
+      setError('');
+      const response = await createBudget({
+        ...formData,
+        limit: parseFloat(formData.limit)
+      });
+      if (response.status === 201 || response.status === 200) {
+        handleClose();
+        loadBudgets();
+      } else {
+        setError('Failed to create budget');
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create budget.');
+      setError(err.response?.data?.message || 'Failed to create budget');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -106,12 +137,12 @@ function Budgets() {
   }, []);
 
   const startEditing = (budget) => {
-    setEditingBudgetId(budget.budgetId);
+    setEditingBudgetId(budget._id || budget.budgetId);
     setEditBudget({
       name: budget.name,
       category: budget.category,
-      limit: budget.limit,
-      period: budget.period
+      limit: budget.limit.toString(),
+      period: budget.period || 'monthly'
     });
   };
 
@@ -130,6 +161,10 @@ function Budgets() {
   };
 
   const handleSave = async () => {
+    if (!editBudget.name || !editBudget.category || !editBudget.limit || !editBudget.period) {
+      setError('Please fill in all fields');
+      return;
+    }
     try {
       await updateBudget(editingBudgetId, {
         ...editBudget,
@@ -220,7 +255,7 @@ function Budgets() {
             variant="contained"
             color="primary"
             startIcon={<AddIcon />}
-            onClick={handleCreateBudget}
+            onClick={handleOpen}
             sx={{
               borderRadius: 2,
               textTransform: 'none',
@@ -309,10 +344,10 @@ function Budgets() {
       <Grid container spacing={3}>
         {filteredBudgets.map((budget) => {
           const status = getBudgetStatus(budget);
-          const isEditing = editingBudgetId === budget.budgetId;
+          const isEditing = editingBudgetId === (budget._id || budget.budgetId);
 
           return (
-            <Grid item xs={12} sm={6} md={4} key={budget.budgetId}>
+            <Grid item xs={12} sm={6} md={4} key={budget._id || budget.budgetId}>
               <Card sx={{ 
                 height: '100%', 
                 bgcolor: 'background.paper',
@@ -325,70 +360,212 @@ function Budgets() {
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                     {isEditing ? (
-                      <TextField
-                        size="small"
-                        value={editBudget.name}
-                        onChange={(e) => handleEditChange('name', e.target.value)}
-                        sx={{ mr: 1 }}
-                      />
+                      <Box sx={{ width: '100%' }}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Name"
+                          value={editBudget.name}
+                          onChange={(e) => handleEditChange('name', e.target.value)}
+                          sx={{ mb: 1 }}
+                        />
+                        <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+                          <InputLabel>Category</InputLabel>
+                          <Select
+                            value={editBudget.category}
+                            onChange={(e) => handleEditChange('category', e.target.value)}
+                            label="Category"
+                          >
+                            {categories.map((category) => (
+                              <MenuItem key={category} value={category}>
+                                {category}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Limit"
+                          type="number"
+                          value={editBudget.limit}
+                          onChange={(e) => handleEditChange('limit', e.target.value)}
+                          InputProps={{
+                            startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                          }}
+                          sx={{ mb: 1 }}
+                        />
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Period</InputLabel>
+                          <Select
+                            value={editBudget.period}
+                            onChange={(e) => handleEditChange('period', e.target.value)}
+                            label="Period"
+                          >
+                            {periods.map((period) => (
+                              <MenuItem key={period.value} value={period.value}>
+                                {period.label}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, gap: 1 }}>
+                          <Button size="small" onClick={cancelEditing}>Cancel</Button>
+                          <Button size="small" variant="contained" onClick={handleSave}>Save</Button>
+                        </Box>
+                      </Box>
                     ) : (
-                      <Typography variant="h6" component="div">
-                        {budget.name}
-                      </Typography>
+                      <>
+                        <Typography variant="h6" component="div">
+                          {budget.name}
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          {status.icon}
+                          <Tooltip title="Edit">
+                            <IconButton size="small" onClick={() => startEditing(budget)} sx={{ ml: 1 }}>
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete">
+                            <IconButton size="small" color="error" onClick={() => openDeleteDialog(budget)} sx={{ ml: 1 }}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </>
                     )}
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      {status.icon}
-                      <Tooltip title="Edit">
-                        <IconButton size="small" onClick={() => startEditing(budget)} sx={{ ml: 1 }}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        <IconButton size="small" color="error" onClick={() => openDeleteDialog(budget)} sx={{ ml: 1 }}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
                   </Box>
-
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    {budget.category}
-                  </Typography>
-
-                  <Box sx={{ mt: 2, mb: 1 }}>
-                    <LinearProgress
-                      variant="determinate"
-                      value={Math.min((budget.spent / budget.limit) * 100, 100)}
-                      sx={{
-                        height: 8,
-                        borderRadius: 4,
-                        backgroundColor: theme.palette.grey[200],
-                        '& .MuiLinearProgress-bar': {
-                          backgroundColor: status.color,
-                          borderRadius: 4,
-                        },
-                      }}
-                    />
-                  </Box>
-
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Spent: {formatCurrency(budget.spent)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Limit: {formatCurrency(budget.limit)}
-                    </Typography>
-                  </Box>
-
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Period: {budget.period.charAt(0).toUpperCase() + budget.period.slice(1)}
-                  </Typography>
+                  {!isEditing && (
+                    <>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Category: {budget.category}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Limit: {formatCurrency(budget.limit)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Period: {budget.period === 'monthly' ? 'Monthly' : 'Weekly'}
+                      </Typography>
+                      <Box sx={{ mt: 2 }}>
+                        <LinearProgress
+                          variant="determinate"
+                          value={(budget.spent / budget.limit) * 100}
+                          color={status.color}
+                          sx={{
+                            height: 8,
+                            borderRadius: 4,
+                            backgroundColor: 'action.hover',
+                            '& .MuiLinearProgress-bar': {
+                              borderRadius: 4,
+                            }
+                          }}
+                        />
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mt: 1, textAlign: 'right' }}
+                        >
+                          {((budget.spent / budget.limit) * 100).toFixed(1)}%
+                        </Typography>
+                      </Box>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </Grid>
           );
         })}
       </Grid>
+
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: 'background.paper',
+            transition: 'background-color 0.3s ease'
+          }
+        }}
+      >
+        <DialogTitle>Add New Budget</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Budget Name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  error={!!error}
+                  helperText={error}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Category</InputLabel>
+                  <Select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    label="Category"
+                  >
+                    {categories.map((category) => (
+                      <MenuItem key={category} value={category}>
+                        {category}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Limit"
+                  name="limit"
+                  type="number"
+                  value={formData.limit}
+                  onChange={handleChange}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Period</InputLabel>
+                  <Select
+                    name="period"
+                    value={formData.period}
+                    onChange={handleChange}
+                    label="Period"
+                  >
+                    {periods.map((period) => (
+                      <MenuItem key={period.value} value={period.value}>
+                        {period.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button
+            onClick={handleCreateBudget}
+            variant="contained"
+            color="primary"
+            disabled={loading}
+          >
+            {loading ? 'Creating...' : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog
         open={deleteDialogOpen}
